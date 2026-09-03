@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #000000;
+  --foreground: #f4f4f6;
+  --surface-0: #050608;
+  --surface-1: #0a0b10;
+  --surface-2: #11131a;
+  --surface-3: #181a24;
+  --border-subtle: #20232e;
+  --border-muted: #171922;
+  --text-muted: #959aa8;
+  --accent-blue: #2b7fff;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #000000;
+  color: #f4f4f6;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Cardboard.ai signature electric blue sketch underline */
+.cardboard-underline {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.cardboard-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 9px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 14' preserveAspectRatio='none'%3E%3Cpath d='M2,9 C28,3 72,13 98,6' stroke='%232b7fff' stroke-width='4.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Custom Scrollbar for sleek Cardboard feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232736;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #33384c;
+}
+
+::selection {
+  background: #1f3760;
+  color: #ffffff;
+}
+
+/* Audio wave bar animation for video preview */
+@keyframes audioPulse {
+  0%, 100% { height: 25%; }
+  50% { height: 95%; }
+}
+
+.audio-bar-1 { animation: audioPulse 0.9s ease-in-out infinite; }
+.audio-bar-2 { animation: audioPulse 0.7s ease-in-out infinite 0.15s; }
+.audio-bar-3 { animation: audioPulse 1.1s ease-in-out infinite 0.3s; }
+.audio-bar-4 { animation: audioPulse 0.8s ease-in-out infinite 0.2s; }
+.audio-bar-5 { animation: audioPulse 1.0s ease-in-out infinite 0.4s; }
+
+/* Chrome mock window shadow */
+.cardboard-window {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
