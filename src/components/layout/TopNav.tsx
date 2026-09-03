@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { WorkspaceArea } from '@/types';
+import { CreatorFlowLogo } from '@/components/brand/CreatorFlowLogo';
 import { 
   Undo2, 
   Redo2, 
   Bot, 
   Video, 
-  Sparkles, 
-  CheckCircle2, 
-  FileSearch, 
   Film, 
-  Share2 
+  Share2,
+  Upload,
+  RotateCcw,
+  Layout,
+  ArrowRight,
+  FileSearch
 } from 'lucide-react';
 
 export const TopNav: React.FC = () => {
@@ -22,16 +25,20 @@ export const TopNav: React.FC = () => {
   const directorOpen = useCreatorFlowStore((s) => s.directorOpen);
   const toggleDirector = useCreatorFlowStore((s) => s.toggleDirector);
   const project = useCreatorFlowStore((s) => s.project);
+  const isLocalVideo = useCreatorFlowStore((s) => s.isLocalVideo);
+  const uploadLocalVideo = useCreatorFlowStore((s) => s.uploadLocalVideo);
+  const resetToSampleVideo = useCreatorFlowStore((s) => s.resetToSampleVideo);
   const canUndo = useCreatorFlowStore((s) => s.canUndo());
   const canRedo = useCreatorFlowStore((s) => s.canRedo());
-  const agentActivity = useCreatorFlowStore((s) => s.agentActivity);
 
-  const lastActivity = agentActivity[0];
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Global keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y or Ctrl+Shift+Z)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if (useCreatorFlowStore.getState().currentArea !== 'workspace') return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         if (e.shiftKey) {
           e.preventDefault();
           creatorFlowOperations.redo();
@@ -39,7 +46,7 @@ export const TopNav: React.FC = () => {
           e.preventDefault();
           creatorFlowOperations.undo();
         }
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         creatorFlowOperations.redo();
       }
@@ -48,74 +55,123 @@ export const TopNav: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'video/mp4' && !file.name.toLowerCase().endsWith('.mp4')) {
+        alert('CreatorFlow only accepts MP4 video files (.mp4). Please upload a valid MP4 video.');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      uploadLocalVideo(file);
+      setCurrentArea('workspace');
+    }
+  };
+
+  // Primary Navigation: Overview | Workspace | Publish | Research (deliberately after publish)
   const navItems: { id: WorkspaceArea; label: string; icon: React.ReactNode }[] = [
-    { id: 'research', label: 'Research', icon: <FileSearch className="w-3.5 h-3.5" /> },
-    { id: 'create', label: 'Create', icon: <Film className="w-3.5 h-3.5" /> },
-    { id: 'publish', label: 'Publish', icon: <Share2 className="w-3.5 h-3.5" /> },
+    { id: 'overview', label: 'Overview', icon: <Layout className="w-4 h-4" /> },
+    { id: 'workspace', label: 'Workspace', icon: <Film className="w-4 h-4" /> },
+    { id: 'publish', label: 'Publish', icon: <Share2 className="w-4 h-4" /> },
+    { id: 'research', label: 'Research', icon: <FileSearch className="w-4 h-4" /> },
   ];
 
   return (
-    <header className="h-14 border-b border-[#1f222b] bg-[#0c0d11] px-4 flex items-center justify-between z-30 shrink-0 select-none">
-      {/* Left: Branding & Project info */}
+    <header className="h-14 border-b border-[#1c1f2b] bg-black px-4 flex items-center justify-between z-30 shrink-0 select-none">
+      {/* Hidden native file input strictly for MP4 video uploads */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="video/mp4,.mp4"
+        className="hidden"
+      />
+
+      {/* Left: Brand Logo & Workspace Controls */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-white text-black font-semibold flex items-center justify-center text-xs tracking-wider shadow-sm">
-            CF
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white tracking-tight leading-none">
-              CreatorFlow
-            </span>
-            <span className="text-[10px] text-[#717684] font-mono leading-tight mt-0.5">
-              agent-native
-            </span>
-          </div>
+        {/* CreatorFlow Brand Logo */}
+        <div 
+          onClick={() => setCurrentArea('overview')}
+          className="cursor-pointer group"
+          title="CreatorFlow Overview"
+        >
+          <CreatorFlowLogo size="md" />
         </div>
 
-        <div className="h-4 w-px bg-[#1f222b] hidden sm:block" />
+        {/* In Workspace: Show active video badge, upload video, and labeled Undo/Redo */}
+        {currentArea === 'workspace' && (
+          <>
+            {/* Loaded Video Badge */}
+            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#0f1118] border border-[#222634] text-xs">
+              <Video className="w-3.5 h-3.5 text-[#969cb0]" />
+              <span className="text-[#e2e5eb] font-medium truncate max-w-[170px]">
+                {project.title}
+              </span>
+              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[#171922] text-[#969cb0]">
+                {project.durationFormatted}
+              </span>
 
-        {/* Loaded Demo Project Badge */}
-        <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-[#13151b] border border-[#21242e] text-xs">
-          <Video className="w-3 h-3 text-[#9ba1b0]" />
-          <span className="text-[#e2e5eb] font-medium truncate max-w-[160px]">
-            {project.title}
-          </span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1c1f28] text-[#9ba1b0]">
-            {project.durationFormatted}
-          </span>
-        </div>
+              {isLocalVideo ? (
+                <button
+                  onClick={() => resetToSampleVideo()}
+                  className="text-[10px] text-sky-400 hover:text-sky-300 ml-1 flex items-center gap-1 font-medium"
+                  title="Reset to default footage"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              ) : (
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/70 px-1 py-0.5 rounded">
+                  1080p
+                </span>
+              )}
+            </div>
 
-        {/* Undo / Redo controls */}
-        <div className="flex items-center gap-1 border-l border-[#1f222b] pl-3">
-          <button
-            onClick={() => creatorFlowOperations.undo()}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-            className={`p-1.5 rounded transition-colors ${
-              canUndo
-                ? 'text-[#c0c5d0] hover:text-white hover:bg-[#1a1c24]'
-                : 'text-[#444855] cursor-not-allowed'
-            }`}
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => creatorFlowOperations.redo()}
-            disabled={!canRedo}
-            title="Redo (Ctrl+Y)"
-            className={`p-1.5 rounded transition-colors ${
-              canRedo
-                ? 'text-[#c0c5d0] hover:text-white hover:bg-[#1a1c24]'
-                : 'text-[#444855] cursor-not-allowed'
-            }`}
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            {/* Upload Local Video Button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#12141c] hover:bg-[#1a1d28] border border-[#252938] text-xs font-medium text-[#c4cad8] hover:text-white transition-all"
+              title="Upload your MP4 video (.mp4)"
+            >
+              <Upload className="w-3.5 h-3.5 text-sky-400" />
+              <span>Upload Video</span>
+            </button>
+
+            {/* Labeled Undo & Redo Controls (Clean seamless without divider) */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => creatorFlowOperations.undo()}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z)"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                  canUndo
+                    ? 'text-[#d3d8e5] hover:text-white bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c]'
+                    : 'text-[#474c5c] bg-[#0c0d12] border border-[#181a24] cursor-not-allowed'
+                }`}
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span>Undo</span>
+              </button>
+              <button
+                onClick={() => creatorFlowOperations.redo()}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y)"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                  canRedo
+                    ? 'text-[#d3d8e5] hover:text-white bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c]'
+                    : 'text-[#474c5c] bg-[#0c0d12] border border-[#181a24] cursor-not-allowed'
+                }`}
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+                <span>Redo</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Center: Primary Area Navigation (Research | Create | Publish) */}
-      <nav className="flex items-center bg-[#13151b] p-0.5 rounded-lg border border-[#20232c]">
+      {/* Center: Primary Area Navigation (Overview | Workspace | Publish) */}
+      <nav className="flex items-center bg-[#0d0e14] p-0.5 rounded-lg border border-[#20232f]">
         {navItems.map((item) => {
           const isActive = currentArea === item.id;
           return (
@@ -124,45 +180,48 @@ export const TopNav: React.FC = () => {
               onClick={() => setCurrentArea(item.id)}
               className={`flex items-center gap-1.5 px-3.5 py-1 rounded-md text-xs font-medium transition-all ${
                 isActive
-                  ? 'bg-[#222632] text-white shadow-sm'
-                  : 'text-[#858b99] hover:text-[#c4c9d5] hover:bg-[#181a21]'
+                  ? 'bg-[#1e2230] text-white shadow-sm'
+                  : 'text-[#7e8596] hover:text-[#c4cad8] hover:bg-[#13151d]'
               }`}
             >
               {item.icon}
-              {item.label}
-              {item.id === 'create' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 ml-0.5" />
+              <span>{item.label}</span>
+              {item.id === 'workspace' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" />
               )}
             </button>
           );
         })}
       </nav>
 
-      {/* Right: Director Toggle & Agent status */}
+      {/* Right: Workspace Director Toggle or Quick Action CTA */}
       <div className="flex items-center gap-3">
-        {lastActivity && (
-          <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-[#787f90] max-w-[200px] truncate">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-            <span className="truncate">{lastActivity.action}</span>
-          </div>
-        )}
-
-        <button
-          onClick={() => toggleDirector()}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
-            directorOpen
-              ? 'bg-white text-black border-white shadow-sm'
-              : 'bg-[#151720] text-[#c9ceda] border-[#252936] hover:bg-[#1d202b]'
-          }`}
-        >
-          <Bot className="w-3.5 h-3.5" />
-          <span>Director</span>
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              directorOpen ? 'bg-black' : 'bg-emerald-400 animate-pulse'
+        {currentArea === 'workspace' ? (
+          <button
+            onClick={() => toggleDirector()}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
+              directorOpen
+                ? 'bg-white text-black border-white shadow-sm'
+                : 'bg-[#12141c] text-[#c9ceda] border-[#252936] hover:bg-[#1a1c27]'
             }`}
-          />
-        </button>
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span>Director</span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                directorOpen ? 'bg-black' : 'bg-emerald-400 animate-pulse'
+              }`}
+            />
+          </button>
+        ) : (
+          <button
+            onClick={() => setCurrentArea('workspace')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-all shadow-sm"
+          >
+            <span>Open Workspace</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </header>
   );

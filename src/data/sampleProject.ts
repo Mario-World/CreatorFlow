@@ -1,8 +1,8 @@
 import { Project, TranscriptSegment, PlatformPublishData, PlatformId } from '@/types';
 
 export const SAMPLE_PROJECT: Project = {
-  id: 'proj_webmcp_01',
-  title: 'Building with WebMCP',
+  id: 'proj_creatorflow_01',
+  title: 'CreatorFlow Production Cut',
   type: 'Video',
   duration: 92,
   durationFormatted: '01:32',

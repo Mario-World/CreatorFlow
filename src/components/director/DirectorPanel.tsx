@@ -12,17 +12,14 @@ import {
   Check, 
   X,
   Layers, 
-  Compass, 
-  RotateCcw,
-  Sliders,
-  CheckCircle2
+  RotateCcw
 } from 'lucide-react';
 
 export const DirectorPanel: React.FC = () => {
   const directorOpen = useCreatorFlowStore((s) => s.directorOpen);
   const agentActivity = useCreatorFlowStore((s) => s.agentActivity);
   const proposedEdit = useCreatorFlowStore((s) => s.proposedEdit);
-  const lastAIAction = useCreatorFlowStore((s) => s.lastAIAction);
+  const project = useCreatorFlowStore((s) => s.project);
   const [intentInput, setIntentInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
 
@@ -53,9 +50,9 @@ export const DirectorPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 lg:w-92 border-l border-[#1f222b] bg-[#0d0e13] flex flex-col h-full shrink-0 select-none">
+    <aside className="w-80 lg:w-92 border-l border-[#1c1f2b] bg-black flex flex-col h-full shrink-0 select-none">
       {/* Header */}
-      <div className="p-4 border-b border-[#1f222b]">
+      <div className="p-4 border-b border-[#1c1f2b]">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-white" />
@@ -63,38 +60,38 @@ export const DirectorPanel: React.FC = () => {
               Director
             </h2>
           </div>
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#171a24] text-[10px] text-emerald-400 font-mono border border-emerald-800/40">
+          <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#11131b] text-xs text-emerald-400 font-mono border border-emerald-900/50">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            WebMCP Active
+            Connected
           </span>
         </div>
         <p className="text-xs text-[#8c92a2] leading-snug">
-          Tell CreatorFlow what you want to make.
+          Express the outcome you want to make.
         </p>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* PROPOSED EDIT CARD (Visible when agent generates an edit proposal) */}
+        {/* PROPOSED EDIT CARD */}
         {proposedEdit && (
-          <div className="p-3.5 rounded-xl bg-[#131622] border border-emerald-500/50 shadow-xl space-y-3 animate-fade-in">
+          <div className="p-4 rounded-2xl bg-[#0e1017] border border-emerald-500/40 shadow-xl space-y-3 animate-fade-in">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/60">
+              <span className="text-xs uppercase font-mono font-bold tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/60">
                 PROPOSED EDIT
               </span>
-              <span className="text-[10px] font-mono text-[#788094]">
+              <span className="text-xs font-mono text-[#788094]">
                 Awaiting Approval
               </span>
             </div>
 
             <div className="space-y-1.5">
-              <div className="text-sm font-bold text-white font-mono">
+              <div className="text-base font-bold text-white font-mono">
                 {proposedEdit.startFormatted} → {proposedEdit.endFormatted}
               </div>
-              <p className="text-xs text-[#cad0e0] font-medium">
+              <p className="text-xs text-[#cad0e0] font-medium leading-snug">
                 &ldquo;{proposedEdit.title}&rdquo;
               </p>
-              <div className="flex items-center gap-3 text-[11px] font-mono text-[#8e95aa] pt-0.5">
+              <div className="flex items-center gap-3 text-xs font-mono text-[#8e95aa] pt-0.5">
                 <span>Format: <strong className="text-white">{proposedEdit.aspectRatio}</strong></span>
                 <span>•</span>
                 <span>Captions: <strong className="text-white">{proposedEdit.captions ? 'On' : 'Off'}</strong></span>
@@ -105,28 +102,51 @@ export const DirectorPanel: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => creatorFlowOperations.approveProposedEdit()}
-                className="w-full py-1.5 px-3 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                className="w-full py-2 px-3 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
               >
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-4 h-4" />
                 <span>Approve</span>
               </button>
               <button
                 onClick={() => creatorFlowOperations.rejectProposedEdit()}
-                className="w-full py-1.5 px-3 rounded-lg bg-[#1a1c27] hover:bg-[#252838] text-[#9ca2b6] hover:text-white text-xs font-medium border border-[#272b3c] transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-3 rounded-lg bg-[#141620] hover:bg-[#1f2230] text-[#a2a8ba] hover:text-white text-xs font-medium border border-[#242838] transition-colors flex items-center justify-center gap-1.5"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
                 <span>Reject</span>
               </button>
             </div>
-            <p className="text-[10px] text-[#6b7182] text-center leading-tight">
+            <p className="text-[11px] text-[#6b7182] text-center leading-tight">
               State will not mutate until approved.
             </p>
           </div>
         )}
 
+        {/* Active Saved Research Brief from Phase 6 */}
+        {project.researchBrief && (
+          <div className="p-3 rounded-xl bg-[#111422] border border-purple-800/40 space-y-1.5 animate-fade-in text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider font-semibold">
+                Saved Research Brief
+              </span>
+              <span className="text-[10px] text-[#6d758a]">Phase 6 Active</span>
+            </div>
+            <p className="text-white font-medium truncate">
+              {project.researchBrief.topic}
+            </p>
+            <button
+              type="button"
+              onClick={() => handleRunIntent('Find the strongest 30 seconds and make it a vertical reel')}
+              className="text-[11px] text-sky-400 hover:text-sky-300 font-medium flex items-center gap-1 pt-0.5"
+            >
+              <span>Apply recommended cut</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {/* Intent Input Form */}
         <form onSubmit={handleSubmit} className="space-y-2">
-          <label className="block text-[11px] font-medium uppercase tracking-wider text-[#737a8c]">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[#737a8c]">
             Creator Intent
           </label>
           <div className="relative">
@@ -140,23 +160,23 @@ export const DirectorPanel: React.FC = () => {
                   handleRunIntent(intentInput);
                 }
               }}
-              placeholder="What should we make?"
-              className="w-full resize-none rounded-lg bg-[#14161f] border border-[#232734] px-3 py-2 text-xs text-white placeholder-[#555a69] focus:outline-none focus:border-[#424b64] focus:ring-1 focus:ring-[#424b64] transition-all"
+              placeholder="What outcome do you want?"
+              className="w-full resize-none rounded-xl bg-[#0c0d13] border border-[#202330] px-3.5 py-2.5 text-xs text-white placeholder-[#555a69] focus:outline-none focus:border-[#424b64] focus:ring-1 focus:ring-[#424b64] transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={!intentInput.trim() || isRunning}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+            className={`w-full py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
               intentInput.trim() && !isRunning
                 ? 'bg-white text-black hover:bg-neutral-200 shadow-sm'
-                : 'bg-[#181a24] text-[#4f5567] border border-[#232634] cursor-not-allowed'
+                : 'bg-[#141620] text-[#555b6e] border border-[#212433] cursor-not-allowed'
             }`}
           >
             {isRunning ? (
               <>
-                <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                 <span>Invoking WebMCP Tools...</span>
               </>
             ) : (
@@ -170,8 +190,8 @@ export const DirectorPanel: React.FC = () => {
 
         {/* Example Intents */}
         <div className="space-y-2">
-          <span className="block text-[11px] font-medium uppercase tracking-wider text-[#737a8c]">
-            Example Intents
+          <span className="block text-xs font-medium uppercase tracking-wider text-[#737a8c]">
+            Suggested Actions
           </span>
           <div className="grid grid-cols-1 gap-1.5">
             {exampleIntents.map((intent, idx) => (
@@ -180,10 +200,10 @@ export const DirectorPanel: React.FC = () => {
                 type="button"
                 onClick={() => handleRunIntent(intent)}
                 disabled={isRunning}
-                className="group w-full text-left p-2.5 rounded-lg bg-[#12141c] hover:bg-[#191c27] border border-[#1f222e] hover:border-[#32384a] text-xs text-[#c6cbda] hover:text-white transition-all flex items-center justify-between"
+                className="group w-full text-left p-3 rounded-xl bg-[#0b0c12] hover:bg-[#141622] border border-[#1b1e2a] hover:border-[#2f3548] text-xs text-[#c6cbda] hover:text-white transition-all flex items-center justify-between"
               >
-                <span className="pr-2 leading-tight">{intent}</span>
-                <ArrowRight className="w-3 h-3 text-[#585e72] group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                <span className="pr-2 leading-relaxed">{intent}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#585e72] group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
             ))}
           </div>
@@ -192,28 +212,28 @@ export const DirectorPanel: React.FC = () => {
         {/* Agent Activity Trace */}
         <div className="space-y-2 pt-2 border-t border-[#1c1e28]">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#737a8c] flex items-center gap-1.5">
-              <Activity className="w-3 h-3 text-[#8a91a3]" />
-              Agent Activity
+            <span className="text-xs font-medium uppercase tracking-wider text-[#737a8c] flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-[#8a91a3]" />
+              Recent Actions
             </span>
-            <span className="text-[10px] font-mono text-[#585e70]">
-              {agentActivity.length} events
+            <span className="text-xs font-mono text-[#585e70]">
+              {agentActivity.length} logged
             </span>
           </div>
 
           <div className="space-y-2">
-            {agentActivity.slice(0, 4).map((act) => (
+            {agentActivity.slice(0, 3).map((act) => (
               <div
                 key={act.id}
-                className="p-2.5 rounded-lg bg-[#11131a] border border-[#1e212c] space-y-1"
+                className="p-3 rounded-xl bg-[#0c0d14] border border-[#1b1e2a] space-y-1"
               >
-                <div className="flex items-center justify-between text-[10px] font-mono">
+                <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-900/50">
                     {act.tool}
                   </span>
-                  <span className="text-[#5b6173]">{act.timestamp}</span>
+                  <span className="text-[#5b6173] text-[11px]">{act.timestamp}</span>
                 </div>
-                <p className="text-xs text-[#d3d8e5] font-medium">
+                <p className="text-xs text-[#d3d8e5] font-medium leading-snug">
                   {act.action}
                 </p>
                 {act.details && (

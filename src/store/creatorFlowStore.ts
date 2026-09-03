@@ -49,6 +49,7 @@ interface CreatorFlowActions {
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   setPlaybackRate: (rate: number) => void;
+  saveResearchBrief: (brief: import('@/types').ResearchBrief) => void;
 }
 
 export type CreatorFlowStore = CreatorFlowState & CreatorFlowActions;
@@ -71,7 +72,7 @@ function createSnapshot(state: CreatorFlowState): StateSnapshot {
 
 export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
   // Navigation
-  currentArea: 'create',
+  currentArea: 'overview',
   directorOpen: true,
 
   // Initial Data
@@ -112,7 +113,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       id: 'act_init',
       timestamp: 'Just now',
       tool: 'system.loadProject',
-      action: 'Loaded demo project "Building with WebMCP" (01:32)',
+      action: 'Loaded project footage "CreatorFlow Production Cut" (01:32)',
       status: 'completed',
       details: '7 transcript segments parsed, timeline initialized to 00:00 - 01:32.',
     },
@@ -430,6 +431,12 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
     })),
 
   uploadLocalVideo: async (file) => {
+    // Professional video editor standard: strictly accept MP4 container format
+    if (file.type !== 'video/mp4' && !file.name.toLowerCase().endsWith('.mp4')) {
+      console.warn('Rejected non-mp4 video format:', file.type, file.name);
+      return;
+    }
+
     const url = URL.createObjectURL(file);
     const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
 
@@ -526,7 +533,29 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
 
     get().logAgentActivity({
       tool: 'media.resetSample',
-      action: 'Switched back to sample video "Building with WebMCP"',
+      action: 'Restored default production project footage (01:32)',
+      status: 'completed',
+    });
+  },
+
+  saveResearchBrief: (brief) => {
+    set((s) => ({
+      project: {
+        ...s.project,
+        researchBrief: brief,
+      },
+    }));
+
+    get().logAgentActivity({
+      tool: 'research.saveBrief',
+      action: `Saved research brief "${brief.topic}" to project`,
+      status: 'completed',
+      details: `Thesis: ${brief.coreThesis.slice(0, 80)}...`,
+    });
+
+    get().logWebMCPExecution({
+      tool: 'save_research_brief',
+      shortResult: `Saved brief "${brief.topic}" to project context`,
       status: 'completed',
     });
   },

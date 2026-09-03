@@ -6,58 +6,44 @@ import {
   Terminal, 
   ChevronDown, 
   ChevronUp, 
-  CheckCircle2, 
-  Code2, 
-  Layers, 
-  Wrench, 
-  Sparkles,
-  RefreshCw
+  CheckCircle2
 } from 'lucide-react';
 
 export const WebMCPActivityPanel: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'executions' | 'tools'>('executions');
 
-  const webmcpReady = useCreatorFlowStore((s) => s.webmcpReady);
-  const webmcpToolCount = useCreatorFlowStore((s) => s.webmcpToolCount || 9);
   const webmcpExecutions = useCreatorFlowStore((s) => s.webmcpExecutions);
 
   const registeredToolNames = [
-    { name: 'get_project_state', desc: 'Read-only: Project details, timeline state, aspect ratio & publishing info' },
-    { name: 'get_transcript', desc: 'Read-only: 7-cue transcript with precise timestamps' },
-    { name: 'find_best_moment', desc: 'Read-only: Deterministic highlight finder (00:18 → 00:48)' },
-    { name: 'create_edit_plan', desc: 'Proposal: Generates edit proposal without mutating state' },
-    { name: 'apply_edit_plan', desc: 'Mutating: Trims timeline, sets edit plan, updates history' },
-    { name: 'add_captions', desc: 'Mutating: Toggles captions overlay in actual project state' },
-    { name: 'change_aspect_ratio', desc: 'Mutating: Reframes canvas to 16:9, 9:16, or 1:1' },
-    { name: 'prepare_for_platform', desc: 'Mutating: Generates platform metadata for YouTube, IG, LinkedIn, X, Medium' },
-    { name: 'undo_last_action', desc: 'Mutating: Restores prior project state via actual history stack' },
+    { name: 'get_project_state', desc: 'Project state, timeline, framing & publishing readiness' },
+    { name: 'get_transcript', desc: 'Transcript cues with millisecond timestamps' },
+    { name: 'find_best_moment', desc: 'Deterministic 30s highlight locator' },
+    { name: 'create_edit_plan', desc: 'Non-mutating edit proposal generator' },
+    { name: 'apply_edit_plan', desc: 'Mutates timeline cut with history snapshot' },
+    { name: 'add_captions', desc: 'Toggles synchronized subtitles' },
+    { name: 'change_aspect_ratio', desc: 'Reframes canvas: 16:9, 9:16, 1:1' },
+    { name: 'prepare_for_platform', desc: 'Packages multi-platform format & copy' },
+    { name: 'undo_last_action', desc: 'Restores prior project state via history stack' },
   ];
 
   return (
-    <div className="border-t border-[#1f222b] bg-[#0c0d12] flex flex-col shrink-0 select-none">
+    <div className="border-t border-[#1c1f2b] bg-[#090a0f] flex flex-col shrink-0 select-none">
       {/* Header Bar */}
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-[#12141c] transition-colors"
+        className="px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-[#11131c] transition-colors"
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-xs font-semibold text-white tracking-tight flex items-center gap-2">
+          <span className="text-xs font-semibold text-white tracking-tight">
             WebMCP Activity
-          </span>
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/50 text-[10px] text-emerald-400 font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Connected
-          </span>
-          <span className="text-[10px] font-mono text-[#8b91a2] bg-[#161822] px-1.5 py-0.5 rounded border border-[#232634]">
-            Registered tools: {webmcpToolCount}
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-[#787f90]">
-          <span className="text-[10px] font-mono hidden sm:inline">
-            {webmcpExecutions.length} execution{webmcpExecutions.length === 1 ? '' : 's'}
+          <span className="text-xs font-mono">
+            {webmcpExecutions.length} tool dispatch{webmcpExecutions.length === 1 ? '' : 'es'}
           </span>
           {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
         </div>
@@ -65,64 +51,67 @@ export const WebMCPActivityPanel: React.FC = () => {
 
       {/* Expandable Body */}
       {isOpen && (
-        <div className="p-3 border-t border-[#1a1c24] bg-[#090a0e] space-y-2.5 max-h-60 overflow-y-auto">
-          {/* Subtabs: Executions vs Registered Tools */}
-          <div className="flex items-center gap-2 border-b border-[#181a22] pb-2">
-            <button
-              onClick={() => setActiveTab('executions')}
-              className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
-                activeTab === 'executions'
-                  ? 'bg-[#1e2230] text-white'
-                  : 'text-[#717789] hover:text-[#c0c5d4]'
-              }`}
-            >
-              Real Executions ({webmcpExecutions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('tools')}
-              className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
-                activeTab === 'tools'
-                  ? 'bg-[#1e2230] text-white'
-                  : 'text-[#717789] hover:text-[#c0c5d4]'
-              }`}
-            >
-              Registered Tools ({registeredToolNames.length})
-            </button>
+        <div className="p-3 border-t border-[#1a1c26] bg-black space-y-2.5 max-h-64 overflow-y-auto">
+          {/* Subtabs */}
+          <div className="flex items-center justify-between border-b border-[#181a24] pb-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('executions')}
+                className={`text-xs font-medium px-2.5 py-1 rounded transition-colors ${
+                  activeTab === 'executions'
+                    ? 'bg-[#181b26] text-white'
+                    : 'text-[#717789] hover:text-[#c0c5d4]'
+                }`}
+              >
+                Executions ({webmcpExecutions.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('tools')}
+                className={`text-xs font-medium px-2.5 py-1 rounded transition-colors ${
+                  activeTab === 'tools'
+                    ? 'bg-[#181b26] text-white'
+                    : 'text-[#717789] hover:text-[#c0c5d4]'
+                }`}
+              >
+                Tools ({registeredToolNames.length})
+              </button>
+            </div>
           </div>
 
           {/* Tab 1: Real Tool Executions */}
           {activeTab === 'executions' && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {webmcpExecutions.length === 0 ? (
-                <div className="py-4 text-center text-[#636879] text-xs">
-                  No WebMCP tools executed yet.
-                  <span className="block text-[11px] text-[#4f5362] mt-0.5">
-                    Click &ldquo;Find the strongest 30 seconds...&rdquo; in Director to trigger real agent tools.
-                  </span>
+                <div className="py-5 text-center text-[#636879] text-xs space-y-1">
+                  <p className="font-medium text-[#888e9f]">No tools executed yet.</p>
+                  <p className="text-[11px] text-[#555a69]">
+                    Click &ldquo;Find the strongest 30 seconds...&rdquo; in Director to run agent actions.
+                  </p>
                 </div>
               ) : (
                 webmcpExecutions.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2 rounded bg-[#11131a] border border-[#1d202b] flex items-start justify-between gap-2 text-xs"
+                    className="p-2.5 rounded-xl bg-[#0e1017] border border-[#1d202d] space-y-1.5 text-xs animate-fade-in"
                   >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <div className="flex items-center justify-between font-mono text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         <span className="text-emerald-400 font-semibold truncate">
                           {item.tool}
                         </span>
-                        <span className="text-[#555a6a] text-[10px]">
-                          • {item.timestamp}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-[#646a7d]">
+                        <span>{item.timestamp}</span>
+                        <span className="px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-900/50">
+                          ok
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#c4c9d7] truncate leading-tight">
-                        {item.shortResult}
-                      </p>
                     </div>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#181a24] text-emerald-400 border border-emerald-900/50 shrink-0">
-                      success
-                    </span>
+
+                    <p className="text-xs text-[#cfd4e2] leading-snug">
+                      {item.shortResult}
+                    </p>
                   </div>
                 ))
               )}
@@ -131,22 +120,22 @@ export const WebMCPActivityPanel: React.FC = () => {
 
           {/* Tab 2: Registered Tools */}
           {activeTab === 'tools' && (
-            <div className="grid grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-1 gap-2">
               {registeredToolNames.map((tool, idx) => (
                 <div
                   key={idx}
-                  className="p-2 rounded bg-[#101219] border border-[#1b1e28] flex items-center justify-between gap-2 text-xs"
+                  className="p-2.5 rounded-xl bg-[#0e1017] border border-[#1b1e2a] flex items-center justify-between gap-2 text-xs"
                 >
                   <div className="min-w-0">
                     <span className="font-mono text-xs text-white font-medium block truncate">
                       {tool.name}
                     </span>
-                    <span className="text-[10px] text-[#717789] block truncate">
+                    <span className="text-xs text-[#7e8598] block truncate">
                       {tool.desc}
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono text-white/50 bg-[#161822] px-1.5 py-0.5 rounded shrink-0">
-                    document.modelContext
+                  <span className="text-[10px] font-mono text-emerald-400/90 bg-[#141620] px-1.5 py-0.5 rounded shrink-0">
+                    tool
                   </span>
                 </div>
               ))}

@@ -16,8 +16,11 @@ export const Timeline: React.FC = () => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<'playhead' | 'start' | 'end' | null>(null);
 
-  // Time ticks along timeline
-  const tickSeconds = [0, 15, 30, 45, 60, 75, 92];
+  // Dynamic time ticks along timeline adapting to duration
+  const numTicks = 6;
+  const tickSeconds = Array.from({ length: numTicks + 1 }, (_, i) => 
+    Math.min(duration, Math.round(i * (duration / numTicks)))
+  );
 
   // Helper to convert mouse clientX to seconds
   const getSecondsFromMouse = useCallback(
@@ -80,7 +83,7 @@ export const Timeline: React.FC = () => {
   const isTrimmed = trimStart > 0 || trimEnd < duration;
 
   return (
-    <div className="h-28 border-t border-[#1f222b] bg-[#0c0d12] px-6 py-3 flex flex-col justify-between shrink-0 select-none z-10">
+    <div className="h-28 border-t border-[#1c1f2b] bg-black px-6 py-3 flex flex-col justify-between shrink-0 select-none z-10">
       {/* Timeline Header Row: Active Cut details & Quick reset */}
       <div className="flex items-center justify-between text-xs mb-1">
         <div className="flex items-center gap-2">

@@ -2,7 +2,22 @@ export type AspectRatio = '16:9' | '9:16' | '1:1';
 
 export type PlatformId = 'youtube' | 'instagram' | 'linkedin' | 'x' | 'medium';
 
-export type WorkspaceArea = 'landing' | 'research' | 'create' | 'publish';
+export type WorkspaceArea = 'overview' | 'workspace' | 'publish' | 'research';
+
+export interface ResearchBrief {
+  id: string;
+  topic: string;
+  audience: string;
+  coreThesis: string;
+  hooks: string[];
+  keyBeats: string[];
+  recommendedCut?: {
+    name: string;
+    start: number;
+    end: number;
+  };
+  savedAt?: string;
+}
 
 export interface Project {
   id: string;
@@ -12,6 +27,7 @@ export interface Project {
   durationFormatted: string;
   source?: 'sample' | 'local';
   videoUrl?: string | null;
+  researchBrief?: ResearchBrief | null;
 }
 
 export interface TranscriptSegment {
@@ -60,6 +76,8 @@ export interface PlatformPublishData {
   hashtags: string[];
   previewHeadline: string;
   status: 'Prepared for publishing';
+  mediaMode?: 'video_text' | 'video_only' | 'text_only' | 'article';
+  isSelected?: boolean;
 }
 
 export interface AgentActivityItem {

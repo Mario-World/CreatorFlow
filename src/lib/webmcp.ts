@@ -25,6 +25,7 @@ declare global {
 
 // In-memory registry for inspection and dispatch
 const toolRegistry = new Map<string, WebMCPToolDefinition>();
+const nativeToolMap = new Map<string, any>();
 
 /**
  * Safe client-side WebMCP initialization and tool registration.
@@ -79,7 +80,11 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
       };
       toolRegistry.set(toolToRegister.name, toolToRegister);
       try {
-        originalRegisterTool(toolToRegister);
+        const registered = originalRegisterTool(toolToRegister);
+        if (registered) {
+          nativeToolMap.set(toolToRegister.name, registered);
+        }
+        return registered;
       } catch (err) {
         console.warn('Native registerTool warning:', err);
       }
@@ -87,14 +92,34 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
     if (!doc.modelContext.getTools) {
       doc.modelContext.getTools = () => Array.from(toolRegistry.values());
     }
-    if (!doc.modelContext.executeTool) {
-      doc.modelContext.executeTool = async (name: string, input?: any) => {
-        const tool = toolRegistry.get(name);
-        if (!tool) throw new Error(`WebMCP Tool not found: "${name}"`);
-        const fn = tool.execute || tool.handler;
-        return await fn!(input);
-      };
-    }
+    const originalExecuteTool = doc.modelContext.executeTool 
+      ? doc.modelContext.executeTool.bind(doc.modelContext) 
+      : null;
+    doc.modelContext.executeTool = async (target: any, input?: any) => {
+      const toolName = typeof target === 'string' ? target : target?.name;
+      const nativeTool = toolName ? nativeToolMap.get(toolName) : (target?.name ? target : null);
+
+      if (originalExecuteTool && (nativeTool || (target && typeof target !== 'string'))) {
+        try {
+          return await originalExecuteTool(nativeTool || target, input);
+        } catch {
+          // fall through to internal execution
+        }
+      }
+
+      if (toolName) {
+        const tool = toolRegistry.get(toolName);
+        if (tool) {
+          const fn = tool.execute || tool.handler;
+          return await fn!(input);
+        }
+      }
+
+      if (originalExecuteTool) {
+        return await originalExecuteTool(target, input);
+      }
+      throw new Error(`WebMCP Tool not found: "${toolName || target}"`);
+    };
     if (!doc.modelContext.hasTool) {
       doc.modelContext.hasTool = (name: string) => toolRegistry.has(name);
     }
@@ -516,6 +541,54 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
     },
   });
 
+  // --------------------------------------------------------------------------
+  // TOOL 10: save_research_brief (Phase 6 — Research)
+  // --------------------------------------------------------------------------
+  context.registerTool({
+    name: 'save_research_brief',
+    description:
+      'Save a structured research brief (topic, audience, thesis, hooks, narrative beats) to the active project state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        topic: { type: 'string' },
+        audience: { type: 'string' },
+        coreThesis: { type: 'string' },
+        hooks: { type: 'array', items: { type: 'string' } },
+        keyBeats: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['topic', 'coreThesis'],
+    },
+    handler: async (input: any) => {
+      const state = useCreatorFlowStore.getState();
+      const brief = {
+        id: `brief_${Date.now()}`,
+        topic: input.topic,
+        audience: input.audience || 'Target Audience',
+        coreThesis: input.coreThesis,
+        hooks: input.hooks || [],
+        keyBeats: input.keyBeats || [],
+        savedAt: new Date().toLocaleTimeString(),
+      };
+      state.saveResearchBrief(brief);
+      return { success: true, brief };
+    },
+    execute: async (input: any) => {
+      const state = useCreatorFlowStore.getState();
+      const brief = {
+        id: `brief_${Date.now()}`,
+        topic: input.topic,
+        audience: input.audience || 'Target Audience',
+        coreThesis: input.coreThesis,
+        hooks: input.hooks || [],
+        keyBeats: input.keyBeats || [],
+        savedAt: new Date().toLocaleTimeString(),
+      };
+      state.saveResearchBrief(brief);
+      return { success: true, brief };
+    },
+  });
+
   // Mark as registered and update store status
   doc.__creatorflow_webmcp_registered__ = true;
   const totalCount = toolRegistry.size;
@@ -537,11 +610,21 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
  */
 export async function executeWebMCPTool(name: string, args?: any): Promise<any> {
   initWebMCP();
-  if (typeof document !== 'undefined' && document.modelContext?.executeTool) {
-    return await document.modelContext.executeTool(name, args);
-  }
   const tool = toolRegistry.get(name);
   if (!tool) throw new Error(`WebMCP Tool "${name}" is not registered.`);
+
+  // If native ModelContext has an executeTool function, attempt calling with the RegisteredTool
+  if (typeof document !== 'undefined' && document.modelContext?.executeTool) {
+    const nativeRegistered = nativeToolMap.get(name);
+    if (nativeRegistered) {
+      try {
+        return await document.modelContext.executeTool(nativeRegistered, args);
+      } catch (err) {
+        console.warn(`Native executeTool call for "${name}" threw, falling back to direct execution:`, err);
+      }
+    }
+  }
+
   const fn = tool.execute || tool.handler;
   return await fn!(args);
 }

@@ -311,6 +311,14 @@ export const creatorFlowOperations = {
     // Default custom intent: propose cut
     await creatorFlowOperations.proposeStrongestShort();
   },
+
+  /**
+   * Saves a structured research brief to the active project state.
+   */
+  saveResearchBrief: (brief: import('@/types').ResearchBrief) => {
+    const store = useCreatorFlowStore.getState();
+    store.saveResearchBrief(brief);
+  },
 };
 
 // Expose on window for runtime inspection
