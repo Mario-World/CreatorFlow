@@ -26,7 +26,8 @@ import {
   Square,
   CheckSquare,
   SquareDashedBottom,
-  FileSearch
+  FileSearch,
+  ChevronDown
 } from 'lucide-react';
 
 // Platform Brand SVGs
@@ -84,6 +85,9 @@ export const PublishWorkspace: React.FC = () => {
     x: true,
     medium: true,
   });
+
+  // Corner toggle dropdown for active publishing channels
+  const [isChannelsDropdownOpen, setIsChannelsDropdownOpen] = useState(false);
 
   // Media modes per platform (allows toggling video + text vs video only vs text only vs article)
   const [platformMediaModes, setPlatformMediaModes] = useState<Record<PlatformId, MediaMode>>({
@@ -241,6 +245,60 @@ export const PublishWorkspace: React.FC = () => {
               <span>Edit in Workspace</span>
             </button>
 
+            {/* Channels toggle in corner */}
+            <div className="relative">
+              <button
+                onClick={() => setIsChannelsDropdownOpen(!isChannelsDropdownOpen)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#12141c] hover:bg-[#1a1e2a] border border-[#262b3a] text-xs font-medium text-[#c4cad8] hover:text-white transition-all shadow-sm"
+                title="Toggle Active Release Channels"
+              >
+                <Layers className="w-3.5 h-3.5 text-sky-400" />
+                <span>Channels ({selectedCount}/{platformList.length})</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#737a8c] transition-transform ${isChannelsDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isChannelsDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-2xl bg-[#0c0e15] border border-[#24293a] shadow-2xl z-40 space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#1c202e]">
+                    <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
+                      Active Release Channels
+                    </span>
+                    <span className="text-[10px] text-[#6d7486] font-mono">
+                      {selectedCount} active
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {platformList.map((p) => {
+                      const isChecked = selectedPlatforms[p.id];
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => togglePlatformSelection(p.id)}
+                          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#151824] transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-2 text-xs text-white">
+                            {p.icon}
+                            <span>{p.label}</span>
+                          </div>
+                          <div
+                            className={`w-7 h-4 rounded-full transition-colors relative ${
+                              isChecked ? 'bg-emerald-500' : 'bg-[#222736]'
+                            }`}
+                          >
+                            <div
+                              className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform ${
+                                isChecked ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => setIsPublishModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold shadow-md transition-all"
@@ -251,46 +309,11 @@ export const PublishWorkspace: React.FC = () => {
           </div>
         </div>
 
-        {/* Platform Selection & Enablement Row */}
-        <div className="p-3.5 rounded-2xl bg-[#090a10] border border-[#1e2230] flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-white uppercase tracking-wider text-[11px]">
-              Active Channels:
-            </span>
-            <span className="text-xs text-[#6f7689]">
-              (Check/uncheck to choose which platforms receive this release)
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {platformList.map((p) => {
-              const isChecked = selectedPlatforms[p.id];
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => togglePlatformSelection(p.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                    isChecked
-                      ? 'bg-[#151926] text-white border border-[#2b354e]'
-                      : 'bg-[#0c0d13] text-[#5b6173] border border-[#181a24] opacity-60'
-                  }`}
-                >
-                  <span className={`w-3 h-3 rounded flex items-center justify-center text-[10px] ${
-                    isChecked ? 'bg-emerald-500 text-black font-bold' : 'border border-[#444a5e]'
-                  }`}>
-                    {isChecked && '✓'}
-                  </span>
-                  <span>{p.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Platform Detail Tabs & Mode Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Platform Tab Buttons */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {/* Unified Control Bar: Platform Selector & Format Mode in Matching Segmented Toggle Style */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-1.5 rounded-2xl bg-[#090a10] border border-[#1e2230]">
+          {/* Select Which Platform Format Needed */}
+          <div className="flex flex-wrap items-center gap-1 p-0.5 rounded-xl bg-[#0d0e14] border border-[#1d202e]">
+            <span className="text-[11px] font-mono text-[#6e7587] px-2.5">Platform:</span>
             {platformList.map((p) => {
               const isActive = currentPlatform === p.id;
               const isChecked = selectedPlatforms[p.id];
@@ -298,33 +321,33 @@ export const PublishWorkspace: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => creatorFlowOperations.setCurrentPlatform(p.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium border transition-all shrink-0 ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-[#181b26] text-white border-[#3d455c] shadow-sm'
-                      : 'bg-[#0f1118] text-[#7d8496] border-[#1d202c] hover:bg-[#141620] hover:text-[#c4c9d8]'
+                      ? 'bg-white text-black font-semibold shadow-sm'
+                      : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
                   }`}
                 >
                   {p.icon}
                   <span>{p.label}</span>
                   {isChecked && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-600' : 'bg-emerald-400'}`} />
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Media Mode Toggle (Video + Text vs Video Only vs Text Only vs Article) */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0d0e14] border border-[#202434] self-start sm:self-auto">
-            <span className="text-[11px] font-mono text-[#6e7587] px-2">Format Mode:</span>
+          {/* Format Mode (Matching Segmented Toggle Style) */}
+          <div className="flex flex-wrap items-center gap-1 p-0.5 rounded-xl bg-[#0d0e14] border border-[#1d202e]">
+            <span className="text-[11px] font-mono text-[#6e7587] px-2.5">Format Mode:</span>
 
             {/* Video + Text Option */}
             <button
               onClick={() => setMediaMode('video_text')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 currentMode === 'video_text'
                   ? 'bg-white text-black font-semibold shadow-sm'
-                  : 'text-[#7e8594] hover:text-white'
+                  : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
               }`}
               title="Publish Video with text caption and headline"
             >
@@ -336,10 +359,10 @@ export const PublishWorkspace: React.FC = () => {
             {(currentPlatform === 'instagram' || currentPlatform === 'youtube') && (
               <button
                 onClick={() => setMediaMode('video_only')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   currentMode === 'video_only'
                     ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#7e8594] hover:text-white'
+                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
                 }`}
                 title="Publish Reel / Short video only"
               >
@@ -352,10 +375,10 @@ export const PublishWorkspace: React.FC = () => {
             {(currentPlatform === 'x' || currentPlatform === 'linkedin') && (
               <button
                 onClick={() => setMediaMode('text_only')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   currentMode === 'text_only'
                     ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#7e8594] hover:text-white'
+                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
                 }`}
                 title="Publish text / thread breakdown without video"
               >
@@ -368,10 +391,10 @@ export const PublishWorkspace: React.FC = () => {
             {(currentPlatform === 'medium' || currentPlatform === 'linkedin' || currentPlatform === 'x') && (
               <button
                 onClick={() => setMediaMode('article')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   currentMode === 'article'
                     ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#7e8594] hover:text-white'
+                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
                 }`}
                 title="Publish as full long-form article or deep thread"
               >
@@ -527,7 +550,38 @@ export const PublishWorkspace: React.FC = () => {
           </div>
 
           {/* Right Column (7 cols): Content Correction & Export Form */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 space-y-4">
+            {/* Active Platform Release Inclusion Toggle */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#090a10] border border-[#1e2230]">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-white">
+                  Publish to {platformList.find((p) => p.id === currentPlatform)?.label}:
+                </span>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                    selectedPlatforms[currentPlatform]
+                      ? 'text-emerald-400 bg-emerald-950/70 border border-emerald-800/60'
+                      : 'text-[#6e7587] bg-[#141620]'
+                  }`}
+                >
+                  {selectedPlatforms[currentPlatform] ? '✓ Active in Release' : 'Paused / Excluded'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => togglePlatformSelection(currentPlatform)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  selectedPlatforms[currentPlatform] ? 'bg-emerald-500' : 'bg-[#222736]'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    selectedPlatforms[currentPlatform] ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* AI Content Correction Banner & Action */}
             <div className="p-4 rounded-2xl bg-[#090b12] border border-[#20273c] space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

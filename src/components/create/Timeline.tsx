@@ -61,6 +61,21 @@ export const Timeline: React.FC = () => {
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging || !e.touches[0]) return;
+      const sec = Math.round(getSecondsFromMouse(e.touches[0].clientX));
+
+      if (isDragging === 'playhead') {
+        creatorFlowOperations.setCurrentTime(sec);
+      } else if (isDragging === 'start') {
+        const newStart = Math.min(sec, trimEnd - 2);
+        creatorFlowOperations.selectTimelineRange(Math.max(0, newStart), trimEnd);
+      } else if (isDragging === 'end') {
+        const newEnd = Math.max(sec, trimStart + 2);
+        creatorFlowOperations.selectTimelineRange(trimStart, Math.min(duration, newEnd));
+      }
+    };
+
     const handleMouseUp = () => {
       if (isDragging) setIsDragging(null);
     };
@@ -68,11 +83,15 @@ export const Timeline: React.FC = () => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleMouseUp);
     }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDragging, trimStart, trimEnd, duration, getSecondsFromMouse]);
 
@@ -83,7 +102,7 @@ export const Timeline: React.FC = () => {
   const isTrimmed = trimStart > 0 || trimEnd < duration;
 
   return (
-    <div className="h-28 border-t border-[#1c1f2b] bg-black px-6 py-3 flex flex-col justify-between shrink-0 select-none z-10">
+    <div className="h-28 border-t border-[#1c1f2b] bg-black px-3 sm:px-6 py-2 sm:py-3 flex flex-col justify-between shrink-0 select-none z-10">
       {/* Timeline Header Row: Active Cut details & Quick reset */}
       <div className="flex items-center justify-between text-xs mb-1">
         <div className="flex items-center gap-2">

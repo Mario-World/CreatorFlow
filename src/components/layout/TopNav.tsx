@@ -88,23 +88,28 @@ export const TopNav: React.FC = () => {
       />
 
       {/* Left: Brand Logo & Workspace Controls */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {/* CreatorFlow Brand Logo */}
         <div 
           onClick={() => setCurrentArea('overview')}
-          className="cursor-pointer group"
+          className="cursor-pointer group shrink-0"
           title="CreatorFlow Overview"
         >
-          <CreatorFlowLogo size="md" />
+          <div className="hidden sm:block">
+            <CreatorFlowLogo size="md" />
+          </div>
+          <div className="block sm:hidden">
+            <CreatorFlowLogo size="sm" />
+          </div>
         </div>
 
         {/* In Workspace: Show active video badge, upload video, and labeled Undo/Redo */}
         {currentArea === 'workspace' && (
           <>
-            {/* Loaded Video Badge */}
-            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#0f1118] border border-[#222634] text-xs">
+            {/* Loaded Video Badge - hidden on tablet/mobile to prevent clutter */}
+            <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#0f1118] border border-[#222634] text-xs">
               <Video className="w-3.5 h-3.5 text-[#969cb0]" />
-              <span className="text-[#e2e5eb] font-medium truncate max-w-[170px]">
+              <span className="text-[#e2e5eb] font-medium truncate max-w-[140px]">
                 {project.title}
               </span>
               <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[#171922] text-[#969cb0]">
@@ -130,62 +135,63 @@ export const TopNav: React.FC = () => {
             {/* Upload Local Video Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#12141c] hover:bg-[#1a1d28] border border-[#252938] text-xs font-medium text-[#c4cad8] hover:text-white transition-all"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#12141c] hover:bg-[#1a1d28] border border-[#252938] text-xs font-medium text-[#c4cad8] hover:text-white transition-all"
               title="Upload your MP4 video (.mp4)"
             >
               <Upload className="w-3.5 h-3.5 text-sky-400" />
               <span>Upload Video</span>
             </button>
 
-            {/* Labeled Undo & Redo Controls (Clean seamless without divider) */}
-            <div className="flex items-center gap-1.5">
+            {/* Labeled Undo & Redo Controls (Responsive icon on mobile, labeled on desktop) */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => creatorFlowOperations.undo()}
                 disabled={!canUndo}
                 title="Undo (Ctrl+Z)"
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded text-xs font-medium transition-all ${
                   canUndo
                     ? 'text-[#d3d8e5] hover:text-white bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c]'
                     : 'text-[#474c5c] bg-[#0c0d12] border border-[#181a24] cursor-not-allowed'
                 }`}
               >
                 <Undo2 className="w-3.5 h-3.5" />
-                <span>Undo</span>
+                <span className="hidden sm:inline">Undo</span>
               </button>
               <button
                 onClick={() => creatorFlowOperations.redo()}
                 disabled={!canRedo}
                 title="Redo (Ctrl+Y)"
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded text-xs font-medium transition-all ${
                   canRedo
                     ? 'text-[#d3d8e5] hover:text-white bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c]'
                     : 'text-[#474c5c] bg-[#0c0d12] border border-[#181a24] cursor-not-allowed'
                 }`}
               >
                 <Redo2 className="w-3.5 h-3.5" />
-                <span>Redo</span>
+                <span className="hidden sm:inline">Redo</span>
               </button>
             </div>
           </>
         )}
       </div>
 
-      {/* Center: Primary Area Navigation (Overview | Workspace | Publish) */}
-      <nav className="flex items-center bg-[#0d0e14] p-0.5 rounded-lg border border-[#20232f]">
+      {/* Center: Primary Area Navigation (Responsive icon-only on small mobile, labeled on sm+) */}
+      <nav className="flex items-center bg-[#0d0e14] p-0.5 rounded-lg border border-[#20232f] mx-1">
         {navItems.map((item) => {
           const isActive = currentArea === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setCurrentArea(item.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1 rounded-md text-xs font-medium transition-all ${
+              title={item.label}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-md text-xs font-medium transition-all ${
                 isActive
                   ? 'bg-[#1e2230] text-white shadow-sm'
                   : 'text-[#7e8596] hover:text-[#c4cad8] hover:bg-[#13151d]'
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="hidden md:inline">{item.label}</span>
               {item.id === 'workspace' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" />
               )}
@@ -194,34 +200,25 @@ export const TopNav: React.FC = () => {
         })}
       </nav>
 
-      {/* Right: Workspace Director Toggle or Quick Action CTA */}
-      <div className="flex items-center gap-3">
-        {currentArea === 'workspace' ? (
-          <button
-            onClick={() => toggleDirector()}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
-              directorOpen
-                ? 'bg-white text-black border-white shadow-sm'
-                : 'bg-[#12141c] text-[#c9ceda] border-[#252936] hover:bg-[#1a1c27]'
+      {/* Right: Workspace Director Toggle in Chat Corner */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <button
+          onClick={() => toggleDirector()}
+          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
+            directorOpen
+              ? 'bg-white text-black border-white shadow-sm'
+              : 'bg-[#12141c] text-[#c9ceda] border-[#252936] hover:bg-[#1a1c27]'
+          }`}
+          title="Toggle Director Agent"
+        >
+          <Bot className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Director</span>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              directorOpen ? 'bg-black' : 'bg-emerald-400 animate-pulse'
             }`}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>Director</span>
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                directorOpen ? 'bg-black' : 'bg-emerald-400 animate-pulse'
-              }`}
-            />
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentArea('workspace')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-all shadow-sm"
-          >
-            <span>Open Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        )}
+          />
+        </button>
       </div>
     </header>
   );

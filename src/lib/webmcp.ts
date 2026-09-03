@@ -23,9 +23,21 @@ declare global {
   }
 }
 
-// In-memory registry for inspection and dispatch
-const toolRegistry = new Map<string, WebMCPToolDefinition>();
-const nativeToolMap = new Map<string, any>();
+// In-memory registry for inspection and dispatch (persists across hot reloads)
+const toolRegistry: Map<string, WebMCPToolDefinition> = 
+  (typeof globalThis !== 'undefined' && (globalThis as any).__creatorflow_tool_registry__) 
+    ? (globalThis as any).__creatorflow_tool_registry__ 
+    : new Map<string, WebMCPToolDefinition>();
+
+const nativeToolMap: Map<string, any> = 
+  (typeof globalThis !== 'undefined' && (globalThis as any).__creatorflow_native_tools__) 
+    ? (globalThis as any).__creatorflow_native_tools__ 
+    : new Map<string, any>();
+
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).__creatorflow_tool_registry__ = toolRegistry;
+  (globalThis as any).__creatorflow_native_tools__ = nativeToolMap;
+}
 
 /**
  * Safe client-side WebMCP initialization and tool registration.
@@ -36,8 +48,8 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
     ? document 
     : ((globalThis as any).document = (globalThis as any).document || {});
 
-  // Prevent duplicate registration
-  if (doc.__creatorflow_webmcp_registered__) {
+  // Prevent duplicate registration ONLY IF toolRegistry has all tools loaded
+  if (doc.__creatorflow_webmcp_registered__ && toolRegistry.size >= 10) {
     const count = toolRegistry.size;
     useCreatorFlowStore.getState().setWebMCPReady(true, count);
     return { ready: true, toolCount: count };
@@ -72,6 +84,8 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
   } else {
     // If native document.modelContext exists, augment with tracking registry & execution helper
     const originalRegisterTool = doc.modelContext.registerTool.bind(doc.modelContext);
+    const originalUnregisterTool = doc.modelContext.unregisterTool ? doc.modelContext.unregisterTool.bind(doc.modelContext) : null;
+
     doc.modelContext.registerTool = (tool: WebMCPToolDefinition) => {
       const toolToRegister: WebMCPToolDefinition = {
         ...tool,
@@ -79,14 +93,30 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
         handler: tool.handler || tool.execute,
       };
       toolRegistry.set(toolToRegister.name, toolToRegister);
+
+      if (nativeToolMap.has(toolToRegister.name)) {
+        return nativeToolMap.get(toolToRegister.name);
+      }
+
       try {
-        const registered = originalRegisterTool(toolToRegister);
-        if (registered) {
-          nativeToolMap.set(toolToRegister.name, registered);
+        if (originalUnregisterTool) {
+          try { originalUnregisterTool(toolToRegister.name); } catch {}
         }
-        return registered;
-      } catch (err) {
-        console.warn('Native registerTool warning:', err);
+        const res = originalRegisterTool(toolToRegister);
+        if (res && typeof res.then === 'function') {
+          res
+            .then((registered: any) => {
+              if (registered) nativeToolMap.set(toolToRegister.name, registered);
+            })
+            .catch(() => {
+              // Ignore native Duplicate tool name rejection
+            });
+        } else if (res) {
+          nativeToolMap.set(toolToRegister.name, res);
+        }
+        return res;
+      } catch {
+        // Ignore native synchronous Duplicate tool name error
       }
     };
     if (!doc.modelContext.getTools) {
@@ -610,23 +640,34 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
  */
 export async function executeWebMCPTool(name: string, args?: any): Promise<any> {
   initWebMCP();
-  const tool = toolRegistry.get(name);
+  let tool = toolRegistry.get(name);
+  if (!tool) {
+    if (typeof document !== 'undefined') {
+      (document as any).__creatorflow_webmcp_registered__ = false;
+    }
+    initWebMCP();
+    tool = toolRegistry.get(name);
+  }
   if (!tool) throw new Error(`WebMCP Tool "${name}" is not registered.`);
 
-  // If native ModelContext has an executeTool function, attempt calling with the RegisteredTool
+  // Execute directly with the tool's execute / handler (this ensures deterministic state updates)
+  const fn = tool.execute || tool.handler;
+  if (!fn) throw new Error(`Tool "${name}" has no execution handler.`);
+  const result = await fn(args);
+
+  // Inform native ModelContext in background without blocking or throwing
   if (typeof document !== 'undefined' && document.modelContext?.executeTool) {
     const nativeRegistered = nativeToolMap.get(name);
     if (nativeRegistered) {
       try {
-        return await document.modelContext.executeTool(nativeRegistered, args);
-      } catch (err) {
-        console.warn(`Native executeTool call for "${name}" threw, falling back to direct execution:`, err);
+        await document.modelContext.executeTool(nativeRegistered, args);
+      } catch {
+        // Native modelContext call handled
       }
     }
   }
 
-  const fn = tool.execute || tool.handler;
-  return await fn!(args);
+  return result;
 }
 
 /**

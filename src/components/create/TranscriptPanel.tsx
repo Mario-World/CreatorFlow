@@ -28,7 +28,7 @@ export const TranscriptPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 lg:w-92 border-r border-[#1c1f2b] bg-black flex flex-col h-full shrink-0 select-none">
+    <aside className="hidden xl:flex w-72 2xl:w-80 border-r border-[#1c1f2b] bg-black flex-col h-full shrink-0 select-none">
       {/* Header */}
       <div className="p-4 border-b border-[#1c1f2b] flex items-center justify-between">
         <div className="flex items-center gap-2">

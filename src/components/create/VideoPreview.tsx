@@ -110,16 +110,16 @@ export const VideoPreview: React.FC = () => {
   const trimDuration = Math.round(trimEnd - trimStart);
   const isTrimmed = trimStart > 0 || trimEnd < duration;
 
-  // Aspect ratio styling
+  // Responsive Aspect ratio styling
   const getAspectRatioClasses = (ratio: AspectRatio) => {
     switch (ratio) {
       case '9:16':
-        return 'w-[280px] h-[490px] md:w-[300px] md:h-[530px]';
+        return 'w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[320px] aspect-[9/16] max-h-[55vh] sm:max-h-[65vh]';
       case '1:1':
-        return 'w-[380px] h-[380px] md:w-[440px] md:h-[440px]';
+        return 'w-full max-w-[300px] sm:max-w-[380px] lg:max-w-[420px] aspect-square max-h-[55vh] sm:max-h-[65vh]';
       case '16:9':
       default:
-        return 'w-full max-w-[720px] aspect-video';
+        return 'w-full max-w-2xl aspect-video max-h-[55vh] sm:max-h-[65vh]';
     }
   };
 
@@ -187,7 +187,7 @@ export const VideoPreview: React.FC = () => {
       )}
 
       {/* Top Controls Toolbar: Aspect Ratio & Captions */}
-      <div className="w-full max-w-2xl flex items-center justify-between mb-3 shrink-0">
+      <div className="w-full max-w-2xl flex flex-wrap items-center justify-between gap-2 mb-3 shrink-0">
         {/* Selected Region & Cut Status */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d0e14] border border-[#202330] text-xs text-[#cfd4e2]">
@@ -346,8 +346,8 @@ export const VideoPreview: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Video Controls: Play/Pause, Step Frames, Volume, Speed, Timecode */}
-      <div className="w-full max-w-2xl mt-3 flex items-center justify-between gap-4 p-3 rounded-2xl bg-[#0d0e14] border border-[#202330] shrink-0">
+      {/* Bottom Transport Controls */}
+      <div className="w-full max-w-2xl mt-3 flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#0d0e14] border border-[#202330] shrink-0">
         {/* Playback buttons */}
         <div className="flex items-center gap-2">
           {/* Cue to start */}

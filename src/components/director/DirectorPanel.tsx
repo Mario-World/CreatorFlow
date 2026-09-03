@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { WebMCPActivityPanel } from '@/components/webmcp/WebMCPActivityPanel';
+import { initWebMCP } from '@/lib/webmcp';
 import { 
   Bot, 
   Sparkles, 
@@ -22,6 +23,10 @@ export const DirectorPanel: React.FC = () => {
   const project = useCreatorFlowStore((s) => s.project);
   const [intentInput, setIntentInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+
+  useEffect(() => {
+    initWebMCP();
+  }, []);
 
   if (!directorOpen) return null;
 
@@ -50,25 +55,42 @@ export const DirectorPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 lg:w-92 border-l border-[#1c1f2b] bg-black flex flex-col h-full shrink-0 select-none">
-      {/* Header */}
-      <div className="p-4 border-b border-[#1c1f2b]">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-white" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">
-              Director
-            </h2>
+    <>
+      {/* Mobile/Tablet Backdrop */}
+      <div 
+        onClick={() => useCreatorFlowStore.getState().toggleDirector()}
+        className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 lg:hidden"
+      />
+
+      <aside className="fixed right-0 top-14 bottom-0 z-50 w-full sm:w-96 lg:static lg:w-80 xl:w-92 border-l border-[#1c1f2b] bg-black flex flex-col h-[calc(100vh-3.5rem)] lg:h-full shrink-0 select-none shadow-2xl lg:shadow-none">
+        {/* Header */}
+        <div className="p-4 border-b border-[#1c1f2b]">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-white" />
+              <h2 className="text-sm font-semibold text-white tracking-tight">
+                Director
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#11131b] text-xs text-emerald-400 font-mono border border-emerald-900/50">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Connected
+              </span>
+              <button
+                type="button"
+                onClick={() => useCreatorFlowStore.getState().toggleDirector()}
+                className="p-1 rounded-lg hover:bg-[#1a1c28] text-[#8e95aa] hover:text-white lg:hidden"
+                title="Close Director"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#11131b] text-xs text-emerald-400 font-mono border border-emerald-900/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Connected
-          </span>
+          <p className="text-xs text-[#8c92a2] leading-snug">
+            Express the outcome you want to make.
+          </p>
         </div>
-        <p className="text-xs text-[#8c92a2] leading-snug">
-          Express the outcome you want to make.
-        </p>
-      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -250,5 +272,6 @@ export const DirectorPanel: React.FC = () => {
       {/* WebMCP Activity Expandable Panel at bottom of Director */}
       <WebMCPActivityPanel />
     </aside>
+    </>
   );
 };
