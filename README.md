@@ -1,4 +1,4 @@
-# CreatorFlow — Agent-Native Content Workflow with WebMCP
+# CreatorFlow — Agent-Native Content Workflow 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
