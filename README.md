@@ -21,25 +21,6 @@ For example:
 
 > “Find the strongest 30 seconds and prepare it as a vertical short.”
 
-Instead of an agent trying to click through buttons, menus, sliders, and timelines, CreatorFlow exposes meaningful application capabilities as **WebMCP tools**. The agent can discover those capabilities and operate the workspace directly.
-
-```
-Creator Intent
-      ↓
-    Agent
-      ↓
-   WebMCP
-      ↓
-CreatorFlow Tools
-      ↓
-Shared Application State
-      ↓
-CreatorFlow UI
-      ↓
-Human Review
-      ↓
-Platform-ready Content
-```
 
 ## The Problem We Are Solving
 
