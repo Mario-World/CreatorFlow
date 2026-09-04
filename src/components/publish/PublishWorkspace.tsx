@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { PlatformId } from '@/types';
+import { getTwitterShareUrl, getLinkedInShareUrl } from '@/lib/openai';
 import { 
   BookOpen, 
   Check, 
@@ -27,7 +28,8 @@ import {
   CheckSquare,
   SquareDashedBottom,
   FileSearch,
-  ChevronDown
+  ChevronDown,
+  ExternalLink
 } from 'lucide-react';
 
 // Platform Brand SVGs
@@ -70,6 +72,8 @@ export const PublishWorkspace: React.FC = () => {
   const localVideoUrl = useCreatorFlowStore((s) => s.localVideoUrl);
   const isLocalVideo = useCreatorFlowStore((s) => s.isLocalVideo);
   const setCurrentArea = useCreatorFlowStore((s) => s.setCurrentArea);
+  const loadHarnessEngineeringPack = useCreatorFlowStore((s) => s.loadHarnessEngineeringPack);
+  const collaboration = useCreatorFlowStore((s) => s.collaboration);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -236,7 +240,16 @@ export const PublishWorkspace: React.FC = () => {
           </div>
 
           {/* Quick Actions Header */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={() => loadHarnessEngineeringPack()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#111422] hover:bg-[#181d32] border border-[#262f4e] text-xs font-medium text-sky-300 hover:text-white transition-colors"
+              title="Re-sync with Harness Engineering research pack"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+              <span>Harness Engineering Pack</span>
+            </button>
+
             <button
               onClick={() => setCurrentArea('workspace')}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c] text-xs font-medium text-[#c6cdda] hover:text-white transition-colors"
@@ -615,6 +628,93 @@ export const PublishWorkspace: React.FC = () => {
                 <div className="p-2 rounded-lg bg-emerald-950/70 border border-emerald-800/60 text-xs text-emerald-300 flex items-center gap-2 animate-fade-in">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>Content corrected! Headline, copy, and hashtags calibrated for {platformList.find(p => p.id === currentPlatform)?.label}.</span>
+                </div>
+              )}
+            </div>
+
+            {/* DIRECT 1-CLICK PLATFORM PUBLISH ACTION */}
+            <div className="p-4 rounded-2xl bg-[#0e111a] border border-[#22283c] space-y-2.5 shadow-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Direct Platform Action
+                </span>
+                <span className="text-[11px] font-mono text-[#787f92]">
+                  1-Click Direct Share
+                </span>
+              </div>
+
+              {currentPlatform === 'x' && (
+                <div className="space-y-2">
+                  <a
+                    href={getTwitterShareUrl(currentData.caption || currentData.title)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-semibold text-xs shadow-md transition-all"
+                  >
+                    <XIcon className="w-4 h-4 fill-black" />
+                    <span>Post Directly to X (Opens Compose Window)</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-neutral-600" />
+                  </a>
+                  <p className="text-[11px] text-[#717789] text-center">
+                    Pre-fills your viral Harness Engineering thread directly into X composer.
+                  </p>
+                </div>
+              )}
+
+              {currentPlatform === 'linkedin' && (
+                <div className="space-y-2">
+                  <a
+                    href={getLinkedInShareUrl('https://creatorflow.app', currentData.caption)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => copyToClipboard(currentData.caption, 'linkedin_share')}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#0a66c2] hover:bg-[#084e96] text-white font-semibold text-xs shadow-md transition-all"
+                  >
+                    <LinkedinIcon className="w-4 h-4 fill-white" />
+                    <span>Share Directly to LinkedIn & Copy Text</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-white/80" />
+                  </a>
+                  <p className="text-[11px] text-[#717789] text-center">
+                    Copies technical case study to clipboard and opens LinkedIn post creator.
+                  </p>
+                </div>
+              )}
+
+              {currentPlatform === 'medium' && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(currentData.description);
+                      copyToClipboard(currentData.description, 'medium_article');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1d2232] hover:bg-[#272e42] border border-[#343e5a] text-white font-semibold text-xs shadow-md transition-all"
+                  >
+                    <BookOpen className="w-4 h-4 text-emerald-400" />
+                    <span>{copiedKey === 'medium_article' ? 'Copied Full Markdown Article!' : 'Copy Full Medium Article (Markdown)'}</span>
+                  </button>
+                  <p className="text-[11px] text-[#717789] text-center">
+                    Ready for 1-click import into Medium editor with architecture diagrams & code blocks.
+                  </p>
+                </div>
+              )}
+
+              {(currentPlatform === 'instagram' || currentPlatform === 'youtube') && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      const pack = `[${currentData.title}]\n\n${currentData.caption}\n\n${currentData.hashtags.join(' ')}`;
+                      navigator.clipboard.writeText(pack);
+                      copyToClipboard(pack, 'video_pack');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-semibold text-xs shadow-md transition-all"
+                  >
+                    <Film className="w-4 h-4 fill-black" />
+                    <span>{copiedKey === 'video_pack' ? 'Copied Video Cut & Metadata!' : 'Copy 9:16 Video Package & Captions'}</span>
+                  </button>
+                  <p className="text-[11px] text-[#717789] text-center">
+                    Calibrated for mobile reels/shorts algorithmic retention.
+                  </p>
                 </div>
               )}
             </div>

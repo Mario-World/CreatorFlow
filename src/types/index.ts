@@ -172,4 +172,39 @@ export interface CreatorFlowState {
   // Real Video & Media
   localVideoUrl: string | null;
   isLocalVideo: boolean;
+
+  // ChatGPT Authentication & AI Connection
+  chatGPTAuth: ChatGPTAuthSession;
+
+  // Live Collaboration & Real-Time Presence
+  collaboration: CollaborationSession;
+}
+
+export interface ChatGPTAuthSession {
+  isAuthenticated: boolean;
+  apiKey?: string;
+  user?: {
+    name: string;
+    email: string;
+    avatar: string;
+  };
+  model: string;
+  connectedAt?: string;
+  status: 'connected' | 'disconnected' | 'connecting';
+}
+
+export interface CollaboratorPresence {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  color: string;
+  isAi?: boolean;
+  status: 'active' | 'idle';
+}
+
+export interface CollaborationSession {
+  sessionElapsedSeconds: number;
+  collaborators: CollaboratorPresence[];
+  activeTopic: string;
 }

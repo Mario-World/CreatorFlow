@@ -147,22 +147,23 @@ export const VideoPreview: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-between p-4 bg-black relative overflow-hidden select-none">
-      {/* Hidden native file input strictly for MP4 video uploads */}
+      {/* Hidden native file input for local video uploads */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) {
-            if (f.type !== 'video/mp4' && !f.name.toLowerCase().endsWith('.mp4')) {
-              alert('CreatorFlow only accepts MP4 video files (.mp4). Please upload a valid MP4 video.');
+            const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(f.name);
+            if (!isVideo) {
+              alert('Please select a valid video file (MP4, WebM, MOV, MKV).');
               if (fileInputRef.current) fileInputRef.current.value = '';
               return;
             }
             uploadLocalVideo(f);
           }
         }}
-        accept="video/mp4,.mp4"
+        accept="video/*,.mp4,.webm,.mov,.mkv,.avi,.m4v"
         className="hidden"
       />
 

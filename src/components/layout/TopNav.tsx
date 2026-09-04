@@ -1,22 +1,26 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { WorkspaceArea } from '@/types';
 import { CreatorFlowLogo } from '@/components/brand/CreatorFlowLogo';
+import { ChatGPTAuthModal } from '@/components/auth/ChatGPTAuthModal';
 import { 
   Undo2, 
   Redo2, 
   Bot, 
   Video, 
   Film, 
-  Share2,
-  Upload,
-  RotateCcw,
-  Layout,
-  ArrowRight,
-  FileSearch
+  Share2, 
+  Upload, 
+  RotateCcw, 
+  Layout, 
+  ArrowRight, 
+  FileSearch,
+  Sparkles,
+  Clock,
+  Users
 } from 'lucide-react';
 
 export const TopNav: React.FC = () => {
@@ -28,10 +32,21 @@ export const TopNav: React.FC = () => {
   const isLocalVideo = useCreatorFlowStore((s) => s.isLocalVideo);
   const uploadLocalVideo = useCreatorFlowStore((s) => s.uploadLocalVideo);
   const resetToSampleVideo = useCreatorFlowStore((s) => s.resetToSampleVideo);
-  const canUndo = useCreatorFlowStore((s) => s.canUndo());
-  const canRedo = useCreatorFlowStore((s) => s.canRedo());
+  const canUndo = useCreatorFlowStore((s) => s.history.past.length > 0);
+  const canRedo = useCreatorFlowStore((s) => s.history.future.length > 0);
+  const chatGPTAuth = useCreatorFlowStore((s) => s.chatGPTAuth);
+  const collaboration = useCreatorFlowStore((s) => s.collaboration);
 
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Live session collaboration timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      useCreatorFlowStore.getState().incrementSessionTimer();
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Global keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y or Ctrl+Shift+Z)
   useEffect(() => {
@@ -58,14 +73,21 @@ export const TopNav: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'video/mp4' && !file.name.toLowerCase().endsWith('.mp4')) {
-        alert('CreatorFlow only accepts MP4 video files (.mp4). Please upload a valid MP4 video.');
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(file.name);
+      if (!isVideo) {
+        alert('Please select a valid video file (MP4, WebM, MOV, MKV).');
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
       uploadLocalVideo(file);
       setCurrentArea('workspace');
     }
+  };
+
+  const formatTimer = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   // Primary Navigation: Overview | Workspace | Publish | Research (deliberately after publish)
@@ -200,8 +222,62 @@ export const TopNav: React.FC = () => {
         })}
       </nav>
 
-      {/* Right: Workspace Director Toggle in Chat Corner */}
+      {/* Right: Live Session Presence, ChatGPT Auth & Director Toggle */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Real-Time Live Session Clock */}
+        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0e1018] border border-[#212534] text-xs font-mono text-[#9ca3b8]" title="Live session duration & active topic">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          <Clock className="w-3 h-3 text-[#7b8398]" />
+          <span>{formatTimer(collaboration.sessionElapsedSeconds)}</span>
+          <span className="text-[#41485c]">•</span>
+          <span className="text-emerald-400/90 text-[11px] font-sans font-medium max-w-[120px] truncate">
+            {collaboration.activeTopic}
+          </span>
+        </div>
+
+        {/* Live Collaborators Presence Stack */}
+        <div className="hidden lg:flex items-center -space-x-1.5 pl-1" title="Active Real-Time Collaborators">
+          {collaboration.collaborators.map((c) => (
+            <div
+              key={c.id}
+              className="relative group cursor-pointer"
+              title={`${c.name} (${c.role})`}
+            >
+              <div 
+                className="w-6 h-6 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden"
+                style={{ backgroundColor: c.color }}
+              >
+                {c.isAi ? (
+                  <Sparkles className="w-3 h-3" />
+                ) : (
+                  c.name.charAt(0)
+                )}
+              </div>
+              <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-emerald-400 border border-black" />
+            </div>
+          ))}
+        </div>
+
+        {/* ChatGPT Authentication & Model Status Badge */}
+        <button
+          onClick={() => setIsAuthModalOpen(true)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all ${
+            chatGPTAuth.isAuthenticated
+              ? 'bg-[#0f171d] hover:bg-[#15212a] border-emerald-800/50 text-[#c9d3e3]'
+              : 'bg-[#141620] hover:bg-[#1c1f2e] border-[#292e40] text-[#8c94a8]'
+          }`}
+          title="ChatGPT Authentication & Model Settings"
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            chatGPTAuth.isAuthenticated ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+          }`} />
+          <span className="hidden md:inline font-semibold">ChatGPT</span>
+          <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/40 text-emerald-400 border border-emerald-900/40">
+            {chatGPTAuth.model}
+          </span>
+        </button>
+
+        {/* Director Toggle */}
         <button
           onClick={() => toggleDirector()}
           className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
@@ -220,6 +296,12 @@ export const TopNav: React.FC = () => {
           />
         </button>
       </div>
+
+      {/* ChatGPT Authentication Modal */}
+      <ChatGPTAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </header>
   );
 };

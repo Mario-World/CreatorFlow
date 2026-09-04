@@ -51,7 +51,19 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
   // Prevent duplicate registration ONLY IF toolRegistry has all tools loaded
   if (doc.__creatorflow_webmcp_registered__ && toolRegistry.size >= 10) {
     const count = toolRegistry.size;
-    useCreatorFlowStore.getState().setWebMCPReady(true, count);
+    const store = useCreatorFlowStore.getState();
+    if (!store.webmcpReady || store.webmcpToolCount !== count) {
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          const s = useCreatorFlowStore.getState();
+          if (!s.webmcpReady || s.webmcpToolCount !== count) {
+            s.setWebMCPReady(true, count);
+          }
+        }, 0);
+      } else {
+        store.setWebMCPReady(true, count);
+      }
+    }
     return { ready: true, toolCount: count };
   }
 
@@ -622,15 +634,27 @@ export function initWebMCP(): { ready: boolean; toolCount: number } {
   // Mark as registered and update store status
   doc.__creatorflow_webmcp_registered__ = true;
   const totalCount = toolRegistry.size;
-  useCreatorFlowStore.getState().setWebMCPReady(true, totalCount);
 
-  // Log system initialization in agent activity
-  useCreatorFlowStore.getState().logAgentActivity({
-    tool: 'webmcp.init',
-    action: `Registered ${totalCount} WebMCP tools with document.modelContext`,
-    status: 'completed',
-    details: 'Agent-native imperative bridge connected and operable.',
-  });
+  const syncStore = () => {
+    const store = useCreatorFlowStore.getState();
+    if (!store.webmcpReady || store.webmcpToolCount !== totalCount) {
+      store.setWebMCPReady(true, totalCount);
+
+      // Log system initialization in agent activity
+      store.logAgentActivity({
+        tool: 'webmcp.init',
+        action: `Registered ${totalCount} WebMCP tools with document.modelContext`,
+        status: 'completed',
+        details: 'Agent-native imperative bridge connected and operable.',
+      });
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    setTimeout(syncStore, 0);
+  } else {
+    syncStore();
+  }
 
   return { ready: true, toolCount: totalCount };
 }

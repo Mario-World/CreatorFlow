@@ -192,6 +192,9 @@ export const creatorFlowOperations = {
     const proposal = store.proposedEdit;
     if (!proposal) return;
 
+    // Snapshot count before approval
+    const initialPastLength = store.history.past.length;
+
     // 1. apply_edit_plan
     await executeWebMCPTool('apply_edit_plan', {
       startSeconds: proposal.startSeconds,
@@ -207,6 +210,12 @@ export const creatorFlowOperations = {
     await executeWebMCPTool('add_captions', {
       enabled: proposal.captions,
     });
+
+    // Determine how many steps were appended to history
+    const addedSteps = Math.max(1, useCreatorFlowStore.getState().history.past.length - initialPastLength);
+    if (typeof window !== 'undefined') {
+      (window as any).__creatorflow_last_ai_steps__ = addedSteps;
+    }
 
     // Clear proposal and show AI change banner
     store.setProposedEdit(null);
@@ -242,7 +251,10 @@ export const creatorFlowOperations = {
    */
   undoAIAction: async () => {
     const store = useCreatorFlowStore.getState();
-    await executeWebMCPTool('undo_last_action');
+    const steps = (typeof window !== 'undefined' && (window as any).__creatorflow_last_ai_steps__) || 2;
+    for (let i = 0; i < steps; i++) {
+      await executeWebMCPTool('undo_last_action');
+    }
     store.setLastAIAction(null);
   },
 
@@ -255,6 +267,18 @@ export const creatorFlowOperations = {
     if (!intent) return;
 
     const lower = intent.toLowerCase();
+
+    // Harness Engineering Intent
+    if (lower.includes('harness')) {
+      store.loadHarnessEngineeringPack();
+      store.logAgentActivity({
+        tool: 'director.harnessEngineering',
+        action: 'Loaded Harness Engineering research brief and platform pack',
+        status: 'completed',
+        details: 'Generated Shorts 9:16 cut, X thread, LinkedIn case study, and Medium article.',
+      });
+      return;
+    }
 
     // Primary Phase 2 Demo Action:
     // "Find the strongest 30 seconds and make it a vertical short" or "Find the strongest 30 seconds"

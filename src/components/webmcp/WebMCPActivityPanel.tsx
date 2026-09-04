@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { 
   Terminal, 
@@ -9,23 +9,15 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { getRegisteredTools } from '@/lib/webmcp';
+
 export const WebMCPActivityPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'executions' | 'tools'>('executions');
 
   const webmcpExecutions = useCreatorFlowStore((s) => s.webmcpExecutions);
-
-  const registeredToolNames = [
-    { name: 'get_project_state', desc: 'Project state, timeline, framing & publishing readiness' },
-    { name: 'get_transcript', desc: 'Transcript cues with millisecond timestamps' },
-    { name: 'find_best_moment', desc: 'Deterministic 30s highlight locator' },
-    { name: 'create_edit_plan', desc: 'Non-mutating edit proposal generator' },
-    { name: 'apply_edit_plan', desc: 'Mutates timeline cut with history snapshot' },
-    { name: 'add_captions', desc: 'Toggles synchronized subtitles' },
-    { name: 'change_aspect_ratio', desc: 'Reframes canvas: 16:9, 9:16, 1:1' },
-    { name: 'prepare_for_platform', desc: 'Packages multi-platform format & copy' },
-    { name: 'undo_last_action', desc: 'Restores prior project state via history stack' },
-  ];
+  const webmcpToolCount = useCreatorFlowStore((s) => s.webmcpToolCount);
+  const registeredTools = useMemo(() => getRegisteredTools(), [webmcpToolCount]);
 
   return (
     <div className="border-t border-[#1c1f2b] bg-[#090a0f] flex flex-col shrink-0 select-none">
@@ -73,7 +65,7 @@ export const WebMCPActivityPanel: React.FC = () => {
                     : 'text-[#717789] hover:text-[#c0c5d4]'
                 }`}
               >
-                Tools ({registeredToolNames.length})
+                Tools ({registeredTools.length})
               </button>
             </div>
           </div>
@@ -121,7 +113,7 @@ export const WebMCPActivityPanel: React.FC = () => {
           {/* Tab 2: Registered Tools */}
           {activeTab === 'tools' && (
             <div className="grid grid-cols-1 gap-2">
-              {registeredToolNames.map((tool, idx) => (
+              {registeredTools.map((tool, idx) => (
                 <div
                   key={idx}
                   className="p-2.5 rounded-xl bg-[#0e1017] border border-[#1b1e2a] flex items-center justify-between gap-2 text-xs"
@@ -131,7 +123,7 @@ export const WebMCPActivityPanel: React.FC = () => {
                       {tool.name}
                     </span>
                     <span className="text-xs text-[#7e8598] block truncate">
-                      {tool.desc}
+                      {tool.description}
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-emerald-400/90 bg-[#141620] px-1.5 py-0.5 rounded shrink-0">

@@ -7,6 +7,8 @@ import {
   WorkspaceArea,
   PlatformPublishData,
   AgentActivityItem,
+  ChatGPTAuthSession,
+  CollaborationSession,
 } from '@/types';
 import { SAMPLE_PROJECT, SAMPLE_TRANSCRIPT, INITIAL_PUBLISHING_DATA } from '@/data/sampleProject';
 
@@ -50,6 +52,17 @@ interface CreatorFlowActions {
   toggleMute: () => void;
   setPlaybackRate: (rate: number) => void;
   saveResearchBrief: (brief: import('@/types').ResearchBrief) => void;
+
+  // ChatGPT Authentication & AI Settings
+  loginChatGPT: (params?: { apiKey?: string; name?: string; email?: string; model?: string }) => void;
+  logoutChatGPT: () => void;
+  setOpenAIApiKey: (key: string) => void;
+  setChatGPTModel: (model: string) => void;
+
+  // Real-Time Collaboration Session
+  incrementSessionTimer: () => void;
+  setActiveTopic: (topic: string) => void;
+  loadHarnessEngineeringPack: () => void;
 }
 
 export type CreatorFlowStore = CreatorFlowState & CreatorFlowActions;
@@ -129,6 +142,54 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
   // Real Media & Local Video
   localVideoUrl: null,
   isLocalVideo: false,
+
+  // ChatGPT Authentication & AI Connection
+  chatGPTAuth: {
+    isAuthenticated: true,
+    apiKey: typeof window !== 'undefined' ? localStorage.getItem('creatorflow_openai_key') || '' : '',
+    user: {
+      name: 'Creator Studio',
+      email: 'creator@creatorflow.app',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    },
+    model: 'gpt-4o',
+    connectedAt: 'Active Session',
+    status: 'connected',
+  },
+
+  // Live Collaboration & Real-Time Presence
+  collaboration: {
+    sessionElapsedSeconds: 1120,
+    activeTopic: 'Harness Engineering',
+    collaborators: [
+      {
+        id: 'u_you',
+        name: 'You (Creator)',
+        role: 'Owner & Editor',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        color: '#10b981',
+        status: 'active',
+      },
+      {
+        id: 'u_gpt',
+        name: 'ChatGPT Copilot',
+        role: 'AI Research & Copy (GPT-4o)',
+        avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80',
+        color: '#06b6d4',
+        isAi: true,
+        status: 'active',
+      },
+      {
+        id: 'u_webmcp',
+        name: 'WebMCP Agent',
+        role: 'Autonomous Tool Operator',
+        avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80',
+        color: '#a855f7',
+        isAi: true,
+        status: 'active',
+      },
+    ],
+  },
 
   setCurrentArea: (area) => set({ currentArea: area }),
   toggleDirector: (open) => set((state) => ({ directorOpen: open ?? !state.directorOpen })),
@@ -431,9 +492,10 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
     })),
 
   uploadLocalVideo: async (file) => {
-    // Professional video editor standard: strictly accept MP4 container format
-    if (file.type !== 'video/mp4' && !file.name.toLowerCase().endsWith('.mp4')) {
-      console.warn('Rejected non-mp4 video format:', file.type, file.name);
+    // Accepts all common video container and web formats
+    const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(file.name);
+    if (!isVideo) {
+      console.warn('Rejected non-video format:', file.type, file.name);
       return;
     }
 
@@ -557,6 +619,123 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       tool: 'save_research_brief',
       shortResult: `Saved brief "${brief.topic}" to project context`,
       status: 'completed',
+    });
+  },
+
+  loginChatGPT: (params) => {
+    const key = params?.apiKey || '';
+    if (typeof window !== 'undefined' && key) {
+      localStorage.setItem('creatorflow_openai_key', key);
+    }
+    set({
+      chatGPTAuth: {
+        isAuthenticated: true,
+        apiKey: key,
+        user: {
+          name: params?.name || 'Verified Creator',
+          email: params?.email || 'creator@openai.com',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        },
+        model: params?.model || 'gpt-4o',
+        connectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'connected',
+      },
+    });
+    get().logAgentActivity({
+      tool: 'auth.loginChatGPT',
+      action: `Connected to ChatGPT (${params?.model || 'gpt-4o'})`,
+      status: 'completed',
+      details: key ? 'Live OpenAI API Key configured for real completions.' : 'Instant authenticated demo session active.',
+    });
+  },
+
+  logoutChatGPT: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('creatorflow_openai_key');
+    }
+    set({
+      chatGPTAuth: {
+        isAuthenticated: false,
+        apiKey: '',
+        model: 'gpt-4o',
+        status: 'disconnected',
+      },
+    });
+  },
+
+  setOpenAIApiKey: (key) => {
+    if (typeof window !== 'undefined') {
+      if (key) localStorage.setItem('creatorflow_openai_key', key);
+      else localStorage.removeItem('creatorflow_openai_key');
+    }
+    set((s) => ({
+      chatGPTAuth: {
+        ...s.chatGPTAuth,
+        apiKey: key,
+        isAuthenticated: true,
+        status: 'connected',
+      },
+    }));
+  },
+
+  setChatGPTModel: (model) => {
+    set((s) => ({
+      chatGPTAuth: {
+        ...s.chatGPTAuth,
+        model,
+      },
+    }));
+  },
+
+  incrementSessionTimer: () => {
+    set((s) => ({
+      collaboration: {
+        ...s.collaboration,
+        sessionElapsedSeconds: s.collaboration.sessionElapsedSeconds + 1,
+      },
+    }));
+  },
+
+  setActiveTopic: (topic) => {
+    set((s) => ({
+      collaboration: {
+        ...s.collaboration,
+        activeTopic: topic,
+      },
+    }));
+  },
+
+  loadHarnessEngineeringPack: () => {
+    const { HARNESS_ENGINEERING_BRIEF, HARNESS_ENGINEERING_PLATFORMS } = require('@/lib/openai');
+    const state = get();
+    const updatedPublishing = { ...state.publishing };
+    Object.keys(HARNESS_ENGINEERING_PLATFORMS).forEach((p) => {
+      if (updatedPublishing[p as PlatformId]) {
+        updatedPublishing[p as PlatformId] = {
+          ...updatedPublishing[p as PlatformId],
+          ...HARNESS_ENGINEERING_PLATFORMS[p],
+        };
+      }
+    });
+
+    set({
+      project: {
+        ...state.project,
+        title: 'Harness Engineering: Fast & Resilient Software Systems',
+        researchBrief: HARNESS_ENGINEERING_BRIEF,
+      },
+      collaboration: {
+        ...state.collaboration,
+        activeTopic: 'Harness Engineering',
+      },
+      publishing: updatedPublishing,
+    });
+
+    get().logAgentActivity({
+      tool: 'workspace.loadTopic',
+      action: 'Loaded "Harness Engineering" Research & Platform Pack',
+      status: 'completed',
+      details: 'Populated Shorts (9:16), X Thread, LinkedIn format, and Medium article.',
     });
   },
 }));
