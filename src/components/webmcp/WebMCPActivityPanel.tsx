@@ -6,14 +6,15 @@ import {
   Terminal, 
   ChevronDown, 
   ChevronUp, 
-  CheckCircle2
+  CheckCircle2,
+  Workflow
 } from 'lucide-react';
 
 import { getRegisteredTools } from '@/lib/webmcp';
 
 export const WebMCPActivityPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'executions' | 'tools'>('executions');
+  const [activeTab, setActiveTab] = useState<'executions' | 'tools' | 'architecture'>('executions');
 
   const webmcpExecutions = useCreatorFlowStore((s) => s.webmcpExecutions);
   const webmcpToolCount = useCreatorFlowStore((s) => s.webmcpToolCount);
@@ -43,7 +44,7 @@ export const WebMCPActivityPanel: React.FC = () => {
 
       {/* Expandable Body */}
       {isOpen && (
-        <div className="p-3 border-t border-[#1a1c26] bg-black space-y-2.5 max-h-64 overflow-y-auto">
+        <div className="p-3 border-t border-[#1a1c26] bg-black space-y-2.5 max-h-72 overflow-y-auto">
           {/* Subtabs */}
           <div className="flex items-center justify-between border-b border-[#181a24] pb-2">
             <div className="flex items-center gap-2">
@@ -66,6 +67,17 @@ export const WebMCPActivityPanel: React.FC = () => {
                 }`}
               >
                 Tools ({registeredTools.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('architecture')}
+                className={`text-xs font-medium px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${
+                  activeTab === 'architecture'
+                    ? 'bg-[#181b26] text-emerald-400 border border-emerald-900/50'
+                    : 'text-[#717789] hover:text-[#c0c5d4]'
+                }`}
+              >
+                <Workflow className="w-3 h-3" />
+                <span>Architecture Flow</span>
               </button>
             </div>
           </div>
@@ -131,6 +143,58 @@ export const WebMCPActivityPanel: React.FC = () => {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Tab 3: Architecture Flow Diagram */}
+          {activeTab === 'architecture' && (
+            <div className="p-3 rounded-xl bg-[#090b10] border border-[#1b202e] space-y-3 font-mono text-xs animate-fade-in">
+              <div className="flex items-center justify-between border-b border-[#171b26] pb-2 text-[11px] text-[#71788c]">
+                <span className="text-white font-semibold flex items-center gap-1.5">
+                  <Workflow className="w-3.5 h-3.5 text-emerald-400" />
+                  Agent-Native WebMCP Flow
+                </span>
+                <span className="text-emerald-400 font-medium">Human-in-the-Loop</span>
+              </div>
+
+              {/* Step Flow */}
+              <div className="space-y-2 text-xs">
+                <div className="p-2 rounded-lg bg-[#10131d] border border-[#202638] flex items-center justify-between">
+                  <span className="text-white font-bold">1. CREATOR INTENT</span>
+                  <span className="text-sky-400 font-sans italic">&ldquo;Make this a strong short&rdquo;</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="p-2 rounded-lg bg-[#0e121a] border border-[#1c2436] space-y-1">
+                    <span className="text-sky-400 font-bold block">1. Understand</span>
+                    <p className="text-[10px] text-[#8e96aa] leading-tight font-sans">
+                      • Transcript cues<br />• Best moment detect<br />• get_project_state
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-[#0e121a] border border-[#1c2436] space-y-1">
+                    <span className="text-emerald-400 font-bold block">2. Edit</span>
+                    <p className="text-[10px] text-[#8e96aa] leading-tight font-sans">
+                      • Timeline trim (30s)<br />• Captions overlay<br />• 9:16 vertical canvas
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-[#0e121a] border border-[#1c2436] space-y-1">
+                    <span className="text-purple-400 font-bold block">3. Prepare</span>
+                    <p className="text-[10px] text-[#8e96aa] leading-tight font-sans">
+                      • LinkedIn, X, Medium<br />• Headline & copy<br />• Research brief
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-2 rounded-lg bg-[#141915] border border-emerald-500/40 flex items-center justify-between">
+                  <span className="text-emerald-300 font-bold">2. HUMAN REVIEW</span>
+                  <span className="text-xs text-[#cad0e0] font-sans">Approve Edit / Undo AI changes</span>
+                </div>
+
+                <div className="p-2 rounded-lg bg-[#12141c] border border-[#212638] flex items-center justify-between">
+                  <span className="text-white font-bold">3. OUTPUT</span>
+                  <span className="text-emerald-400 font-bold">READY TO PUBLISH</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

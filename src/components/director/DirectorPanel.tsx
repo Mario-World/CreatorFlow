@@ -68,10 +68,10 @@ What outcome should we execute?`,
   if (!directorOpen) return null;
 
   const quickPrompts = [
-    { label: 'Find the strongest 30 seconds from this video and prepare it as a short.', icon: <Film className="w-3 h-3 text-emerald-400" /> },
+    { label: 'Make this a strong short', icon: <Film className="w-3 h-3 text-emerald-400" /> },
     { label: 'Prepare this for LinkedIn.', icon: <Share2 className="w-3 h-3 text-sky-400" /> },
-    { label: 'Save the key idea from this content as a research brief.', icon: <FileSearch className="w-3 h-3 text-purple-400" /> },
     { label: 'Undo that.', icon: <RotateCcw className="w-3 h-3 text-amber-400" /> },
+    { label: 'Save the key idea from this content as a research brief.', icon: <FileSearch className="w-3 h-3 text-purple-400" /> },
   ];
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -93,7 +93,7 @@ What outcome should we execute?`,
       // 1. Run domain operation or WebMCP tool if matching
       const lower = text.toLowerCase();
       if (
-        (lower.includes('strongest') || lower.includes('30s') || lower.includes('30 seconds') || lower.includes('short')) &&
+        (lower.includes('strong') || lower.includes('strongest') || lower.includes('30s') || lower.includes('30 seconds') || lower.includes('short')) &&
         !lower.includes('linkedin')
       ) {
         await creatorFlowOperations.proposeStrongestShort();
