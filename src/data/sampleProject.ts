@@ -2,10 +2,10 @@ import { Project, TranscriptSegment, PlatformPublishData, PlatformId } from '@/t
 
 export const SAMPLE_PROJECT: Project = {
   id: 'proj_creatorflow_01',
-  title: 'CreatorFlow Production Cut',
-  type: 'Video',
-  duration: 92,
-  durationFormatted: '01:32',
+  title: 'How to Fine-tune a Model Without Code',
+  type: 'Vertical Video (9:16)',
+  duration: 127,
+  durationFormatted: '02:07',
 };
 
 export const SAMPLE_TRANSCRIPT: TranscriptSegment[] = [
@@ -15,7 +15,7 @@ export const SAMPLE_TRANSCRIPT: TranscriptSegment[] = [
     end: 8,
     startFormatted: '00:00',
     endFormatted: '00:08',
-    text: 'Most websites were designed for humans.',
+    text: 'Most people think fine-tuning an AI model requires deep machine learning code.',
   },
   {
     id: 'seg_2',
@@ -23,7 +23,7 @@ export const SAMPLE_TRANSCRIPT: TranscriptSegment[] = [
     end: 18,
     startFormatted: '00:08',
     endFormatted: '00:18',
-    text: 'Agents still have to guess how interfaces work.',
+    text: 'They assume you need a cluster of GPUs and months of Python scripts.',
   },
   {
     id: 'seg_3',
@@ -31,132 +31,138 @@ export const SAMPLE_TRANSCRIPT: TranscriptSegment[] = [
     end: 31,
     startFormatted: '00:18',
     endFormatted: '00:31',
-    text: 'WebMCP changes that by giving websites structured tools.',
+    text: 'Here is the truth: you can fine-tune custom AI models today with zero code.',
   },
   {
     id: 'seg_4',
     start: 31,
-    end: 46,
+    end: 48,
     startFormatted: '00:31',
-    endFormatted: '00:46',
-    text: 'Instead of clicking through an interface, an agent can perform meaningful actions.',
+    endFormatted: '00:48',
+    text: 'Without any technical knowledge in AI engineering, you take your domain knowledge, curate your dataset, and train a specialized model in minutes.',
   },
   {
     id: 'seg_5',
-    start: 46,
-    end: 62,
-    startFormatted: '00:46',
-    endFormatted: '01:02',
-    text: 'That means websites can become agent-native.',
+    start: 48,
+    end: 66,
+    startFormatted: '00:48',
+    endFormatted: '01:06',
+    text: 'Instead of spending fifty thousand dollars building from scratch, no-code fine-tuning adapts open weights to your exact voice.',
   },
   {
     id: 'seg_6',
-    start: 62,
-    end: 78,
-    startFormatted: '01:02',
-    endFormatted: '01:18',
-    text: 'And creators can use the same idea for repetitive production workflows.',
+    start: 66,
+    end: 85,
+    startFormatted: '01:06',
+    endFormatted: '01:25',
+    text: 'Platforms now automate LoRA adapters, quantization, and hyperparameter tuning in the background.',
   },
   {
     id: 'seg_7',
-    start: 78,
-    end: 92,
-    startFormatted: '01:18',
-    endFormatted: '01:32',
-    text: 'Imagine telling your editor what you want instead of manually searching through hours of footage.',
+    start: 85,
+    end: 106,
+    startFormatted: '01:25',
+    endFormatted: '01:46',
+    text: "Your unfair advantage isn't writing PyTorch—it's having the proprietary business data that makes the model smart.",
+  },
+  {
+    id: 'seg_8',
+    start: 106,
+    end: 127,
+    startFormatted: '01:46',
+    endFormatted: '02:07',
+    text: 'If you want to build domain-specific AI without writing code, start fine-tuning your data today.',
   },
 ];
 
 export const INITIAL_PUBLISHING_DATA: Record<PlatformId, PlatformPublishData> = {
+  linkedin: {
+    platform: 'linkedin',
+    name: 'LinkedIn',
+    format: '9:16 Vertical Video + Thought Leadership Post',
+    title: 'How to Fine-tune a Model Without Code',
+    caption: `You don't need a PhD in AI Engineering to fine-tune high-performance models in 2026.
+
+Here is what most teams get wrong:
+They think fine-tuning means writing complex PyTorch scripts and managing CUDA drivers.
+
+The reality:
+1. No-Code Adaptation: Modern no-code platforms automate LoRA adapters and quantization.
+2. Data > Code: Your competitive advantage is proprietary domain knowledge, not GPU engineering.
+3. Speed to Market: Deploy domain-specific models in hours instead of quarters.
+
+Here is the exact framework to fine-tune your first model without writing a single line of code 🧵👇
+
+#AIEngineering #NoCode #FineTuning #MachineLearning #CreatorEconomy`,
+    description: 'How you can do this without technical knowledge in AI Engineering',
+    hashtags: ['#AIEngineering', '#NoCode', '#FineTuning', '#MachineLearning', '#CreatorEconomy'],
+    previewHeadline: 'LinkedIn: How to Fine-tune a Model Without Code',
+    status: 'Prepared for publishing',
+  },
   youtube: {
     platform: 'youtube',
     name: 'YouTube',
-    format: '16:9 Landscape Video (4K/1080p)',
-    title: 'Building with WebMCP: Why Websites Need Structured Agent Tools',
-    caption: 'Most websites were designed for humans. WebMCP changes that by giving websites structured tools.',
-    description: `Most websites were designed for humans. Agents still have to guess how interfaces work. In this breakdown, we explore how WebMCP provides structured tools so agents perform meaningful actions instead of clicking blindly through UIs.
+    format: '9:16 Vertical Short (1080x1920)',
+    title: 'How to Fine-tune a Model Without Code (AI Engineering Guide)',
+    caption: 'How you can fine-tune AI models without technical knowledge in AI engineering.',
+    description: `How you can do this without technical knowledge in AI Engineering.
 
 Chapters:
-00:00 The Human UI Limitation
-00:18 How WebMCP Gives Structured Tools
-00:46 Becoming Agent-Native
-01:02 Creative Production Workflows with Agents`,
-    hashtags: ['#WebMCP', '#AI', '#AgenticAI', '#DevTools', '#NextJS'],
-    previewHeadline: 'Building with WebMCP: The Agent-Native Web Era',
+00:00 The No-Code AI Fine-Tuning Shift
+00:18 The 30s Core Hook: Zero-Code Custom Models
+00:48 LoRA Adapters & Dataset Curation
+01:25 The Business Moat: Domain Data vs Foundational Weights`,
+    hashtags: ['#FineTuning', '#NoCodeAI', '#AIEngineering', '#Shorts', '#LLM'],
+    previewHeadline: 'YouTube Short: How to Fine-tune a Model Without Code',
     status: 'Prepared for publishing',
   },
   instagram: {
     platform: 'instagram',
     name: 'Instagram',
     format: '9:16 Vertical Reel (1080x1920)',
-    title: 'Websites weren’t built for AI agents — until WebMCP',
-    caption: `Websites were built for human fingers, not AI agents. 🤯
+    title: 'Fine-tune AI Models with Zero Code (00:18 - 00:48)',
+    caption: `Stop writing boilerplate ML code. 🤯 You can fine-tune frontier AI models today without technical knowledge in AI engineering!
 
-WebMCP changes everything by giving web apps structured tools. Instead of an agent clicking around guessing buttons, it executes deterministic actions directly.
-
-Imagine an editor that takes your vision and cuts footage instantly. That is CreatorFlow.
-
-Save this for your next AI workflow build! 💡`,
+Save this reel for your next AI project build! 💡 #NoCodeAI #FineTuning #AIEngineering #TechCreator`,
     description: 'Instagram Reel preparation with punchy hook and vertical safe-zone overlay.',
-    hashtags: ['#CreatorEconomy', '#AITools', '#WebMCP', '#VideoEditing', '#Productivity'],
-    previewHeadline: 'Reel: Websites weren’t built for AI agents',
-    status: 'Prepared for publishing',
-  },
-  linkedin: {
-    platform: 'linkedin',
-    name: 'LinkedIn',
-    format: 'Video Post + Thought Leadership Copy',
-    title: 'Why the next wave of software is Agent-Native (and what it means for creators)',
-    caption: `Most websites were designed for human eyeballs and cursor clicks.
-
-When AI agents try to browse, they’re forced to guess how brittle DOM elements work.
-
-WebMCP flips this paradigm:
-1. Web applications expose structured tools directly to agents.
-2. Actions become deterministic, reliable, and instantaneous.
-3. Creators can delegate repetitive editing workflows through natural intent rather than manual scrubbing.
-
-We built CreatorFlow as a working demonstration of this architecture.
-
-Are you preparing your web applications to be agent-native? Let's discuss in the comments.`,
-    description: 'Professional video post with executive breakdown and high-signal takeaway.',
-    hashtags: ['#ArtificialIntelligence', '#SoftwareEngineering', '#ProductDesign', '#WebMCP', '#FutureOfWork'],
-    previewHeadline: 'Thought Leadership: The Architecture of Agent-Native Web Apps',
+    hashtags: ['#NoCodeAI', '#FineTuning', '#AIEngineering', '#TechCreator', '#Reels'],
+    previewHeadline: 'Reel: How to Fine-tune a Model Without Code',
     status: 'Prepared for publishing',
   },
   x: {
     platform: 'x',
     name: 'X (Twitter)',
-    format: '2:20 Video Clip + Launch Thread',
-    title: 'Websites were designed for humans. WebMCP makes them agent-native.',
-    caption: `Most websites were designed for humans. Agents still have to guess how interfaces work.
+    format: '9:16 Video Clip + Launch Thread',
+    title: 'How to Fine-tune a Model Without Code',
+    caption: `You don't need to write Python to fine-tune an AI model.
 
-WebMCP gives websites structured tools.
+Here is how non-technical founders and creators can specialize open models with zero code 🧵👇
 
-Instead of clicking through an interface, an agent performs meaningful actions.
+1/ The Big Lie:
+You were told fine-tuning requires a cluster of H100s and a PhD. In reality, LoRA adapters make it a dataset problem, not a code problem.
 
-Here's how we built CreatorFlow using this exact pattern 🧵👇`,
-    description: 'Optimized short video clip with thread opener for high engagement.',
-    hashtags: ['#WebMCP', '#buildinpublic', '#AIagents', '#devtools'],
-    previewHeadline: 'X Thread: Most websites were designed for humans...',
+2/ How to do it without code:
+• Step 1: Export 100 high-signal examples in JSONL format
+• Step 2: Ingest into modern no-code fine-tuning platforms
+• Step 3: Test deterministic eval benchmarks
+• Step 4: Deploy your domain adapter endpoint
+
+3/ Your Moat:
+Your proprietary business data is your moat—not writing PyTorch.`,
+    description: 'How you can do this without technical knowledge in AI Engineering',
+    hashtags: ['#AIEngineering', '#NoCodeAI', '#FineTuning', '#BuildInPublic'],
+    previewHeadline: 'X Thread: How to Fine-tune a Model Without Code',
     status: 'Prepared for publishing',
   },
   medium: {
     platform: 'medium',
     name: 'Medium',
-    format: 'Technical Deep Dive & Video Embed',
-    title: 'Architecting Agent-Native Workspaces: Lessons from Building CreatorFlow with WebMCP',
-    caption: 'A deep dive into how structured agent tools replace brittle UI automation for creative tooling.',
-    description: `## Introduction: The Human-Interface Bottleneck
-Most websites were designed for humans. Visual layouts, drop-down menus, and modal dialogs cater to human cognitive processing. But when an autonomous agent tries to navigate these interfaces, friction compounds.
-
-## Enter WebMCP: Structured Tools for the Web
-WebMCP changes that by giving websites structured tools. Instead of clicking through an interface, an agent can perform meaningful actions with typed parameters, verified states, and transactional rollbacks.
-
-## Applying the Pattern to Creator Workflows
-Imagine telling your editor what you want instead of manually searching through hours of footage. In this article, we break down the Zustand domain operations pattern that powers CreatorFlow.`,
-    hashtags: ['#WebDevelopment', '#ArtificialIntelligence', '#Technology', '#SoftwareArchitecture'],
-    previewHeadline: 'Medium Publication: Architecting Agent-Native Workspaces',
+    format: 'Technical Long-Form Article (Markdown)',
+    title: 'How to Fine-tune a Model Without Code: The Non-Technical Guide to AI Engineering',
+    caption: 'A practical blueprint for operators and creators to customize frontier models without writing a single line of Python.',
+    description: 'How you can do this without technical knowledge in AI Engineering',
+    hashtags: ['#ArtificialIntelligence', '#MachineLearning', '#NoCode', '#Engineering'],
+    previewHeadline: 'Medium Article: How to Fine-tune a Model Without Code',
     status: 'Prepared for publishing',
   },
 };

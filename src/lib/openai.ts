@@ -270,49 +270,93 @@ Keep answers concise, punchy, creator-focused, and actionable.`,
     }
   }
 
-  // 2. Intelligent Live Domain Generator (Context-aware responses for Harness Engineering & Creator operations)
-  if (lower.includes('harness') || lower.includes('research') || lower.includes('topic')) {
+  // 2. Intelligent Live Domain Generator (Context-aware responses for 2:07 vertical video on Fine-tuning without code)
+  if (lower.includes('strongest') || lower.includes('30s') || lower.includes('30 seconds') || (lower.includes('short') && !lower.includes('linkedin'))) {
     return {
-      reply: `I have thoroughly researched **Harness Engineering** for your content workspace.
+      reply: `**Best moment found**
 
-### Key Thesis
-Harness Engineering is the critical discipline of wrapping software architectures and AI agent systems in deterministic simulation environments. It removes production debugging by catching regressions in milliseconds.
+**00:18 → 00:48** (30 seconds)
+• **Strongest topic / hook detected**: Fine-tuning without code vs training from scratch
+• **Recommended format**: 9:16 Vertical
+• **Captions**: Auto-subtitles recommended
 
-### Recommended Content Angles:
-1. **Shorts / Reels (9:16)**: 30-second high-energy cut contrasting "debugging in production" vs "instant sandbox replay".
-2. **X Post / Thread**: Viral 5-part breakdown explaining automotive crash test analogies applied to modern software & LLMs.
-3. **LinkedIn Format**: Technical leadership post on reducing deployment friction and AI eval harnesses.
-4. **Medium Article**: Comprehensive architectural guide on building modular test and evaluation harnesses.
-
-Would you like me to apply the recommended 30s cut to your timeline or prepare multi-platform exports now?`,
+I have evaluated project state and formulated this edit proposal via WebMCP. Check the **PROPOSED EDIT** card above to review and approve.`,
       suggestedAction: {
         type: 'cut',
-        label: 'Apply 30s Cut to Workspace',
-        value: { start: 15, end: 45, ratio: '9:16' },
+        label: 'Review Proposed 30s Cut',
+        value: { start: 18, end: 48, ratio: '9:16' },
       },
-      toolsInvoked: ['webmcp.find_best_moment', 'research.synthesize_brief', 'openai.knowledge_engine'],
+      toolsInvoked: [
+        'webmcp.get_project_state',
+        'webmcp.get_transcript',
+        'webmcp.find_best_moment',
+        'webmcp.create_edit_plan',
+      ],
     };
   }
 
-  if (lower.includes('short') || lower.includes('reel') || lower.includes('vertical') || lower.includes('9:16')) {
+  if (lower.includes('linkedin')) {
     return {
-      reply: `I have shaped your video for **Vertical Shorts & Reels (9:16)**. 
-- Formatted canvas to 9:16 mobile frame
-- Enabled high-contrast synchronized captions
-- Trimmed to the strongest 30-second segment [00:15 → 00:45] covering the core Harness Engineering unlock.`,
+      reply: `### LINKEDIN
+
+**Video**
+✓ Ready
+
+**Headline**
+✓ Prepared ("How to Fine-tune a Model Without Code")
+
+**Post copy**
+✓ Prepared ("How you can do this without technical knowledge in AI Engineering")
+
+**Status**
+READY FOR REVIEW`,
       suggestedAction: {
         type: 'publish',
-        label: 'View Shorts in Publish Workspace',
-        value: 'instagram',
+        label: 'View LinkedIn in Publish Workspace',
+        value: 'linkedin',
       },
-      toolsInvoked: ['webmcp.change_aspect_ratio', 'webmcp.add_captions', 'webmcp.apply_edit_plan'],
+      toolsInvoked: ['webmcp.prepare_for_platform'],
+    };
+  }
+
+  if (lower.includes('undo')) {
+    return {
+      reply: `**Reverted to Previous State**
+
+✓ \`undo_last_action\` executed
+The project has returned to its previous state (02:07 full video, 9:16 vertical). Timeline cuts and captions reverted. Full human control preserved.`,
+      toolsInvoked: ['webmcp.undo_last_action'],
+    };
+  }
+
+  if (lower.includes('research') || lower.includes('brief') || lower.includes('save') || lower.includes('key idea')) {
+    return {
+      reply: `### RESEARCH BRIEF
+
+**Core Idea**
+Fine-tuning custom AI models today requires zero code: curated domain datasets create defensible moats without writing Python or managing GPU clusters.
+
+**Key Hook**
+“You don't need a PhD in AI engineering to customize frontier LLMs.”
+
+**Important Points**
+• No-code LoRA adapters automate quantization and hyperparameter tuning in the background
+• Proprietary domain data is the business moat, not writing boilerplate ML code
+• Deploy custom domain models in hours instead of quarters
+
+**Audience**
+Non-technical founders, operators, product managers, and builders
+
+**Content Direction**
+Focus on business dataset curation, real-world examples, and actionable no-code workflows.`,
+      toolsInvoked: ['webmcp.save_research_brief'],
     };
   }
 
   if (lower.includes('x') || lower.includes('twitter') || lower.includes('tweet') || lower.includes('thread')) {
     return {
-      reply: `Generated a high-impact **X thread on Harness Engineering**. 
-It includes a viral hook, the 3 harness tiers (Component, Traffic Replay, AI Eval), and practical takeaways. You can share it directly to X with 1 click from the Publish tab!`,
+      reply: `Generated a high-impact **X thread on How to Fine-tune a Model Without Code**. 
+It includes the viral hook, the 4-step no-code framework, and domain dataset takeaways. You can share it directly to X from the Publish studio!`,
       suggestedAction: {
         type: 'publish',
         label: 'Share Directly to X',
@@ -322,23 +366,10 @@ It includes a viral hook, the 3 harness tiers (Component, Traffic Replay, AI Eva
     };
   }
 
-  if (lower.includes('linkedin')) {
-    return {
-      reply: `Created a professional **LinkedIn thought-leadership post** on Harness Engineering. 
-It highlights deterministic state replay, AI eval benchmarks, and engineering velocity. Ready for 1-click sharing in Publish!`,
-      suggestedAction: {
-        type: 'publish',
-        label: 'Share to LinkedIn',
-        value: 'linkedin',
-      },
-      toolsInvoked: ['webmcp.prepare_for_platform', 'linkedin.compose_post'],
-    };
-  }
-
   if (lower.includes('medium') || lower.includes('article') || lower.includes('blog')) {
     return {
-      reply: `Crafted a publication-ready **Medium technical article** titled *"Harness Engineering: The Missing Architecture in Modern AI and Distributed Systems"*. 
-Complete with ASCII architecture diagrams, code fixtures, and implementation blueprints.`,
+      reply: `Crafted a publication-ready **Medium technical article** titled *"How to Fine-tune a Model Without Code: The Non-Technical Guide to AI Engineering"*. 
+Complete with architecture blueprints and implementation steps.`,
       suggestedAction: {
         type: 'publish',
         label: 'Read & Export Medium Article',
@@ -350,7 +381,11 @@ Complete with ASCII architecture diagrams, code fixtures, and implementation blu
 
   // Default helpful response
   return {
-    reply: `I can help you edit your video, research **Harness Engineering**, generate tailored copy for Shorts/Reels, X, LinkedIn, or Medium, and share directly to platforms. What would you like to build next?`,
+    reply: `I can help you process your **2:07 vertical video** on **"How to Fine-tune a Model Without Code"**.
+• Ask me to *"Find the strongest 30 seconds from this video and prepare it as a short."*
+• Ask me to *"Prepare this for LinkedIn."*
+• Tell me to *"Undo that."*
+• Ask me to *"Save the key idea from this content as a research brief."*`,
     toolsInvoked: ['director.agent_co_pilot'],
   };
 }

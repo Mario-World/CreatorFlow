@@ -46,7 +46,8 @@ interface CreatorFlowActions {
   setLastAIAction: (action: { description: string; timestamp: string } | null) => void;
 
   // Real Media & Local Video
-  uploadLocalVideo: (file: File) => Promise<void>;
+  uploadLocalVideo: (file: File, options?: { title?: string; text?: string }) => Promise<void>;
+  applyContentText: (params: { title?: string; text?: string }) => void;
   resetToSampleVideo: () => void;
   setVolume: (volume: number) => void;
   toggleMute: () => void;
@@ -93,9 +94,9 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
   transcript: SAMPLE_TRANSCRIPT,
   timeline: {
     currentTime: 0,
-    duration: 92,
+    duration: 127,
     trimStart: 0,
-    trimEnd: 92,
+    trimEnd: 127,
     isPlaying: false,
     volume: 1,
     isMuted: false,
@@ -103,17 +104,17 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
   },
   selectedSegment: null,
   editPlan: {
-    name: 'Full Recording (Uncut)',
-    description: 'Complete source recording without cuts applied.',
+    name: 'Full Recording (Uncut - 02:07)',
+    description: 'Original 2:07 vertical video (9:16) without cuts applied.',
     activeCut: null,
   },
   captions: {
-    enabled: true,
+    enabled: false,
     style: 'punchy',
     currentText: SAMPLE_TRANSCRIPT[0].text,
   },
-  aspectRatio: '16:9',
-  currentPlatform: 'youtube',
+  aspectRatio: '9:16',
+  currentPlatform: 'linkedin',
   publishing: INITIAL_PUBLISHING_DATA,
 
   history: {
@@ -126,9 +127,9 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       id: 'act_init',
       timestamp: 'Just now',
       tool: 'system.loadProject',
-      action: 'Loaded project footage "CreatorFlow Production Cut" (01:32)',
+      action: 'Loaded source video "How to Fine-tune a Model Without Code" (02:07)',
       status: 'completed',
-      details: '7 transcript segments parsed, timeline initialized to 00:00 - 01:32.',
+      details: '8 transcript segments parsed, timeline initialized to 00:00 - 02:07 (9:16 vertical).',
     },
   ],
 
@@ -160,7 +161,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
   // Live Collaboration & Real-Time Presence
   collaboration: {
     sessionElapsedSeconds: 1120,
-    activeTopic: 'Harness Engineering',
+    activeTopic: 'How to Fine-tune a Model Without Code',
     collaborators: [
       {
         id: 'u_you',
@@ -491,7 +492,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       timeline: { ...s.timeline, playbackRate: rate },
     })),
 
-  uploadLocalVideo: async (file) => {
+  uploadLocalVideo: async (file, options) => {
     // Accepts all common video container and web formats
     const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(file.name);
     if (!isVideo) {
@@ -500,7 +501,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
     }
 
     const url = URL.createObjectURL(file);
-    const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
+    const cleanTitle = options?.title?.trim() || file.name.replace(/\.[^/.]+$/, '');
 
     let duration = 60;
     try {
@@ -519,14 +520,39 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       duration = 60;
     }
 
-    const step = Math.max(5, Math.floor(duration / 5));
-    const generatedTranscript = [
-      { id: 'seg_loc_1', start: 0, end: Math.min(step, duration), startFormatted: '00:00', endFormatted: formatTime(Math.min(step, duration)), text: `Opening visual hook for ${cleanTitle}.` },
-      { id: 'seg_loc_2', start: Math.min(step, duration), end: Math.min(step * 2, duration), startFormatted: formatTime(Math.min(step, duration)), endFormatted: formatTime(Math.min(step * 2, duration)), text: `Core action and primary footage focus.` },
-      { id: 'seg_loc_3', start: Math.min(step * 2, duration), end: Math.min(step * 3, duration), startFormatted: formatTime(Math.min(step * 2, duration)), endFormatted: formatTime(Math.min(step * 3, duration)), text: `Key climax moment and high retention point.` },
-      { id: 'seg_loc_4', start: Math.min(step * 3, duration), end: Math.min(step * 4, duration), startFormatted: formatTime(Math.min(step * 3, duration)), endFormatted: formatTime(Math.min(step * 4, duration)), text: `Supporting sequence and narrative arc.` },
-      { id: 'seg_loc_5', start: Math.min(step * 4, duration), end: duration, startFormatted: formatTime(Math.min(step * 4, duration)), endFormatted: formatTime(duration), text: `Closing resolution and call to action.` },
-    ].filter((s) => s.start < duration);
+    let generatedTranscript: import('@/types').TranscriptSegment[] = [];
+    if (options?.text && options.text.trim()) {
+      const lines = options.text
+        .split(/\n+/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      if (lines.length > 0) {
+        const step = duration / lines.length;
+        generatedTranscript = lines.map((line, idx) => {
+          const start = Math.round(idx * step);
+          const end = Math.round(Math.min(duration, (idx + 1) * step));
+          return {
+            id: `seg_custom_${idx + 1}`,
+            start,
+            end,
+            startFormatted: formatTime(start),
+            endFormatted: formatTime(end),
+            text: line,
+          };
+        });
+      }
+    }
+
+    if (generatedTranscript.length === 0) {
+      const step = Math.max(5, Math.floor(duration / 5));
+      generatedTranscript = [
+        { id: 'seg_loc_1', start: 0, end: Math.min(step, duration), startFormatted: '00:00', endFormatted: formatTime(Math.min(step, duration)), text: `Opening visual hook for ${cleanTitle}.` },
+        { id: 'seg_loc_2', start: Math.min(step, duration), end: Math.min(step * 2, duration), startFormatted: formatTime(Math.min(step, duration)), endFormatted: formatTime(Math.min(step * 2, duration)), text: `Core action and primary footage focus.` },
+        { id: 'seg_loc_3', start: Math.min(step * 2, duration), end: Math.min(step * 3, duration), startFormatted: formatTime(Math.min(step * 2, duration)), endFormatted: formatTime(Math.min(step * 3, duration)), text: `Key climax moment and high retention point.` },
+        { id: 'seg_loc_4', start: Math.min(step * 3, duration), end: Math.min(step * 4, duration), startFormatted: formatTime(Math.min(step * 3, duration)), endFormatted: formatTime(Math.min(step * 4, duration)), text: `Supporting sequence and narrative arc.` },
+        { id: 'seg_loc_5', start: Math.min(step * 4, duration), end: duration, startFormatted: formatTime(Math.min(step * 4, duration)), endFormatted: formatTime(duration), text: `Closing resolution and call to action.` },
+      ].filter((s) => s.start < duration);
+    }
 
     set((s) => ({
       localVideoUrl: url,
@@ -539,6 +565,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
         durationFormatted: formatTime(duration),
         source: 'local',
         videoUrl: url,
+        scriptText: options?.text || undefined,
       },
       transcript: generatedTranscript,
       timeline: {
@@ -558,13 +585,107 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
         ...s.captions,
         currentText: generatedTranscript[0]?.text || cleanTitle,
       },
+      publishing: {
+        ...s.publishing,
+        youtube: {
+          ...s.publishing.youtube,
+          title: cleanTitle,
+          description: options?.text || s.publishing.youtube.description,
+        },
+        instagram: {
+          ...s.publishing.instagram,
+          caption: options?.text ? `${cleanTitle}\n\n${options.text}` : s.publishing.instagram.caption,
+        },
+        linkedin: {
+          ...s.publishing.linkedin,
+          title: cleanTitle,
+          caption: options?.text ? `${cleanTitle}\n\n${options.text}` : s.publishing.linkedin.caption,
+        },
+        x: {
+          ...s.publishing.x,
+          title: cleanTitle,
+          caption: options?.text ? `${cleanTitle}\n\n${options.text}` : s.publishing.x.caption,
+        },
+      },
     }));
 
     get().logAgentActivity({
       tool: 'media.uploadLocalVideo',
-      action: `Loaded local video: "${file.name}"`,
+      action: `Loaded local video: "${file.name}" with attached content`,
       status: 'completed',
-      details: `Parsed duration (${formatTime(duration)}), audio & video tracks active. WebMCP tools connected.`,
+      details: `Parsed duration (${formatTime(duration)}), audio & video tracks active. ${generatedTranscript.length} transcript cues generated.`,
+    });
+  },
+
+  applyContentText: ({ title, text }) => {
+    const s = get();
+    const cleanTitle = title?.trim() || s.project.title;
+    const duration = s.timeline.duration || 60;
+
+    let newTranscript = s.transcript;
+    if (text && text.trim()) {
+      const lines = text
+        .split(/\n+/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+
+      if (lines.length > 0) {
+        const step = duration / lines.length;
+        newTranscript = lines.map((line, idx) => {
+          const start = Math.round(idx * step);
+          const end = Math.round(Math.min(duration, (idx + 1) * step));
+          return {
+            id: `seg_custom_${idx + 1}`,
+            start,
+            end,
+            startFormatted: formatTime(start),
+            endFormatted: formatTime(end),
+            text: line,
+          };
+        });
+      }
+    }
+
+    set((state) => ({
+      project: {
+        ...state.project,
+        title: cleanTitle,
+        scriptText: text || state.project.scriptText,
+      },
+      transcript: newTranscript,
+      captions: {
+        ...state.captions,
+        currentText: newTranscript[0]?.text || state.captions.currentText,
+      },
+      publishing: {
+        ...state.publishing,
+        youtube: {
+          ...state.publishing.youtube,
+          title: cleanTitle,
+          description: text || state.publishing.youtube.description,
+        },
+        instagram: {
+          ...state.publishing.instagram,
+          caption: text ? `${cleanTitle}\n\n${text}` : state.publishing.instagram.caption,
+        },
+        linkedin: {
+          ...state.publishing.linkedin,
+          title: cleanTitle,
+          caption: text ? `${cleanTitle}\n\n${text}` : state.publishing.linkedin.caption,
+        },
+        x: {
+          ...state.publishing.x,
+          title: cleanTitle,
+          caption: text ? `${cleanTitle}\n\n${text}` : state.publishing.x.caption,
+        },
+      },
+    }));
+
+    get().logAgentActivity({
+      tool: 'content.applyCustomText',
+      action: `Applied custom content text: "${cleanTitle}"`,
+      status: 'completed',
+      details: `Generated ${newTranscript.length} transcript cues across ${formatTime(duration)}.`,
     });
   },
 
@@ -574,6 +695,7 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
       isLocalVideo: false,
       project: SAMPLE_PROJECT,
       transcript: SAMPLE_TRANSCRIPT,
+      aspectRatio: '9:16',
       timeline: {
         ...s.timeline,
         currentTime: 0,
@@ -583,19 +705,20 @@ export const useCreatorFlowStore = create<CreatorFlowStore>((set, get) => ({
         isPlaying: false,
       },
       editPlan: {
-        name: 'Full Recording (Uncut)',
-        description: 'Sample recording restored.',
+        name: 'Full Recording (Uncut - 02:07)',
+        description: 'Original 2:07 vertical video (9:16) without cuts applied.',
         activeCut: null,
       },
       captions: {
         ...s.captions,
+        enabled: false,
         currentText: SAMPLE_TRANSCRIPT[0].text,
       },
     }));
 
     get().logAgentActivity({
       tool: 'media.resetSample',
-      action: 'Restored default production project footage (01:32)',
+      action: 'Restored source video "How to Fine-tune a Model Without Code" (02:07)',
       status: 'completed',
     });
   },

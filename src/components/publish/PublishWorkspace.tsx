@@ -4,32 +4,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { PlatformId } from '@/types';
-import { getTwitterShareUrl, getLinkedInShareUrl } from '@/lib/openai';
 import { 
-  BookOpen, 
   Check, 
   Copy, 
   Film, 
-  Sparkles,
-  Layers, 
   Play, 
   Pause, 
-  CheckCircle2, 
-  Wand2, 
-  Send, 
   Share2, 
-  Image as ImageIcon,
-  FileText,
-  AlignLeft,
-  Video,
-  Monitor,
-  Smartphone,
-  Square,
-  CheckSquare,
-  SquareDashedBottom,
-  FileSearch,
-  ChevronDown,
-  ExternalLink
+  BookOpen
 } from 'lucide-react';
 
 // Platform Brand SVGs
@@ -59,8 +41,6 @@ const XIcon = ({ className = "w-4 h-4 text-sky-400" }: { className?: string }) =
   </svg>
 );
 
-type MediaMode = 'video_text' | 'video_only' | 'text_only' | 'article';
-
 export const PublishWorkspace: React.FC = () => {
   const currentPlatform = useCreatorFlowStore((s) => s.currentPlatform);
   const publishing = useCreatorFlowStore((s) => s.publishing);
@@ -71,673 +51,187 @@ export const PublishWorkspace: React.FC = () => {
   const captions = useCreatorFlowStore((s) => s.captions);
   const localVideoUrl = useCreatorFlowStore((s) => s.localVideoUrl);
   const isLocalVideo = useCreatorFlowStore((s) => s.isLocalVideo);
-  const setCurrentArea = useCreatorFlowStore((s) => s.setCurrentArea);
-  const loadHarnessEngineeringPack = useCreatorFlowStore((s) => s.loadHarnessEngineeringPack);
-  const collaboration = useCreatorFlowStore((s) => s.collaboration);
+  const preparePlatformOutput = useCreatorFlowStore((s) => s.preparePlatformOutput);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [isCorrecting, setIsCorrecting] = useState(false);
-  const [correctionApplied, setCorrectionApplied] = useState(false);
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-
-  // Platform selection toggles (which platforms to include in final polish & publish)
-  const [selectedPlatforms, setSelectedPlatforms] = useState<Record<PlatformId, boolean>>({
-    youtube: true,
-    instagram: true,
-    linkedin: true,
-    x: true,
-    medium: true,
-  });
-
-  // Corner toggle dropdown for active publishing channels
-  const [isChannelsDropdownOpen, setIsChannelsDropdownOpen] = useState(false);
-
-  // Media modes per platform (allows toggling video + text vs video only vs text only vs article)
-  const [platformMediaModes, setPlatformMediaModes] = useState<Record<PlatformId, MediaMode>>({
-    youtube: 'video_text', // Video + Thumbnail + Headline
-    instagram: 'video_only', // Reels: Just Video
-    x: 'text_only', // X: Text / Thread (or Video + Text)
-    linkedin: 'text_only', // LinkedIn: Text Post (or Video + Text)
-    medium: 'article', // Medium: Article story
-  });
-
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const platformList: { id: PlatformId; label: string; icon: React.ReactNode }[] = [
-    { id: 'youtube', label: 'YouTube', icon: <YoutubeIcon className="w-4 h-4 text-red-400" /> },
-    { id: 'instagram', label: 'Instagram', icon: <InstagramIcon className="w-4 h-4 text-pink-400" /> },
-    { id: 'linkedin', label: 'LinkedIn', icon: <LinkedinIcon className="w-4 h-4 text-blue-400" /> },
-    { id: 'x', label: 'X (Twitter)', icon: <XIcon className="w-4 h-4 text-sky-400" /> },
+    { id: 'youtube', label: 'YouTube', icon: <YoutubeIcon className="w-4 h-4" /> },
+    { id: 'instagram', label: 'Instagram', icon: <InstagramIcon className="w-4 h-4" /> },
+    { id: 'linkedin', label: 'LinkedIn', icon: <LinkedinIcon className="w-4 h-4" /> },
+    { id: 'x', label: 'X', icon: <XIcon className="w-4 h-4" /> },
     { id: 'medium', label: 'Medium', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
   ];
 
   const currentData = publishing[currentPlatform];
   const trimDuration = Math.round(trimEnd - trimStart);
-  const currentMode = platformMediaModes[currentPlatform];
 
   // Sync video loop strictly to active cut from Workspace
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
     video.currentTime = trimStart;
-  }, [trimStart, currentPlatform]);
 
-  const handleVideoTimeUpdate = () => {
-    const video = videoRef.current;
-    if (!video) return;
+    const handleTimeUpdate = () => {
+      if (video.currentTime >= trimEnd) {
+        video.currentTime = trimStart;
+      }
+    };
 
-    if (video.currentTime >= trimEnd) {
-      video.currentTime = trimStart;
-      if (!isPlaying) video.pause();
-    }
-  };
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [trimStart, trimEnd]);
 
   const toggleVideoPlayback = () => {
     const video = videoRef.current;
-    if (!video) {
-      setIsPlaying(!isPlaying);
-      return;
-    }
-
+    if (!video) return;
     if (isPlaying) {
       video.pause();
       setIsPlaying(false);
     } else {
-      if (video.currentTime >= trimEnd || video.currentTime < trimStart) {
-        video.currentTime = trimStart;
-      }
-      video.play().then(() => setIsPlaying(true)).catch(() => {});
+      video.play().catch(() => {});
+      setIsPlaying(true);
     }
   };
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+    setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  const handleFieldChange = (field: 'title' | 'caption' | 'description', value: string) => {
-    creatorFlowOperations.preparePlatformOutput(currentPlatform, {
-      [field]: value,
-    });
+  const handleFieldChange = (field: 'title' | 'caption', value: string) => {
+    preparePlatformOutput(currentPlatform, { [field]: value });
   };
-
-  const togglePlatformSelection = (p: PlatformId) => {
-    setSelectedPlatforms((prev) => ({
-      ...prev,
-      [p]: !prev[p],
-    }));
-  };
-
-  const setMediaMode = (mode: MediaMode) => {
-    setPlatformMediaModes((prev) => ({
-      ...prev,
-      [currentPlatform]: mode,
-    }));
-  };
-
-  // Run AI Content Correction on active platform
-  const handleRunContentCorrection = () => {
-    setIsCorrecting(true);
-
-    setTimeout(() => {
-      let polishedTitle = currentData.title;
-      let polishedCaption = currentData.caption;
-      let polishedHashtags = [...currentData.hashtags];
-
-      if (currentPlatform === 'linkedin') {
-        polishedTitle = `The Shift from Human Interfaces to Agent-Native Tools`;
-        polishedCaption = `Most websites were designed for human eyeballs.\n\nAI agents still have to click blindly through brittle DOMs.\n\nWebMCP changes everything by giving web apps deterministic, agent-operable tools.\n\nHere is how we built an agent-native workspace from scratch in 48 hours. 👇\n\nWhat tools should every SaaS expose to agents first?`;
-        polishedHashtags = ['#WebMCP', '#ArtificialIntelligence', '#SoftwareEngineering', '#ProductDesign', '#FutureOfWeb'];
-      } else if (currentPlatform === 'instagram') {
-        polishedTitle = `Stop Scraping Websites. Start Using WebMCP. 🚀`;
-        polishedCaption = `Why are agents still guessing where buttons are?\n\nWebMCP exposes real browser tools straight to external AI agents.\n\n🎬 30s breakdown from our latest build.\n\nSave this for your next AI hackathon! ⚡`;
-        polishedHashtags = ['#techcreator', '#webmcp', '#coding', '#ai', '#developerlife', '#buildinpublic'];
-      } else if (currentPlatform === 'youtube') {
-        polishedTitle = `Building Agent-Native Apps with WebMCP (Full 30s Cut)`;
-        polishedCaption = `Watch how CreatorFlow turns manual video editing workflows into structured agent-operable tools with document.modelContext.registerTool.\n\nTimestamps:\n00:00 - The Problem with Human UIs\n00:18 - WebMCP Architecture\n00:48 - Live Agent Execution`;
-      } else if (currentPlatform === 'x') {
-        polishedTitle = `WebMCP: The End of DOM Scraping for AI`;
-        polishedCaption = `Most websites fail AI agents because they force them to guess buttons.\n\nWebMCP gives websites structured tools.\n\nHere is a 30s vertical short cut live with agent operations:`;
-        polishedHashtags = ['#WebMCP', '#AI', '#buildinpublic'];
-      }
-
-      creatorFlowOperations.preparePlatformOutput(currentPlatform, {
-        title: polishedTitle,
-        caption: polishedCaption,
-        hashtags: polishedHashtags,
-      });
-
-      setIsCorrecting(false);
-      setCorrectionApplied(true);
-      setTimeout(() => setCorrectionApplied(false), 3000);
-    }, 450);
-  };
-
-  const selectedCount = Object.values(selectedPlatforms).filter(Boolean).length;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-y-auto bg-black p-6 select-none">
-      <div className="max-w-7xl mx-auto w-full space-y-6">
-        {/* Workspace Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[#1c1f2a]">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-mono font-medium text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-2.5 py-0.5 rounded-full">
-                Publishing Hub
-              </span>
-              <span className="text-xs text-[#6e7587] font-mono">
-                {selectedCount} platform{selectedCount === 1 ? '' : 's'} enabled for publishing
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-normal text-white tracking-tight">
-              Publish
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-y-auto bg-[#070709] p-6 text-[#e2e5eb] select-none">
+      <div className="max-w-4xl mx-auto w-full space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-[#1a1d28]">
+          <div className="space-y-0.5">
+            <h1 className="text-base font-semibold text-white tracking-tight flex items-center gap-2">
+              <Share2 className="w-4 h-4 text-[#8a91a2]" />
+              <span>Publish & Export</span>
             </h1>
-            <p className="text-sm text-[#8c92a4] mt-1 max-w-xl">
-              Select which platforms to publish to, toggle video vs text mode, run AI content correction, and export your package.
+            <p className="text-xs text-[#787f91]">
+              Platform-ready content shaped from your workspace cut.
             </p>
           </div>
-
-          {/* Quick Actions Header */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <button
-              onClick={() => loadHarnessEngineeringPack()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#111422] hover:bg-[#181d32] border border-[#262f4e] text-xs font-medium text-sky-300 hover:text-white transition-colors"
-              title="Re-sync with Harness Engineering research pack"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-              <span>Harness Engineering Pack</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentArea('workspace')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#141620] hover:bg-[#1f2230] border border-[#272b3c] text-xs font-medium text-[#c6cdda] hover:text-white transition-colors"
-            >
-              <Film className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Edit in Workspace</span>
-            </button>
-
-            {/* Channels toggle in corner */}
-            <div className="relative">
-              <button
-                onClick={() => setIsChannelsDropdownOpen(!isChannelsDropdownOpen)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#12141c] hover:bg-[#1a1e2a] border border-[#262b3a] text-xs font-medium text-[#c4cad8] hover:text-white transition-all shadow-sm"
-                title="Toggle Active Release Channels"
-              >
-                <Layers className="w-3.5 h-3.5 text-sky-400" />
-                <span>Channels ({selectedCount}/{platformList.length})</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#737a8c] transition-transform ${isChannelsDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isChannelsDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-2xl bg-[#0c0e15] border border-[#24293a] shadow-2xl z-40 space-y-2 animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#1c202e]">
-                    <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
-                      Active Release Channels
-                    </span>
-                    <span className="text-[10px] text-[#6d7486] font-mono">
-                      {selectedCount} active
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    {platformList.map((p) => {
-                      const isChecked = selectedPlatforms[p.id];
-                      return (
-                        <button
-                          key={p.id}
-                          onClick={() => togglePlatformSelection(p.id)}
-                          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#151824] transition-colors text-left"
-                        >
-                          <div className="flex items-center gap-2 text-xs text-white">
-                            {p.icon}
-                            <span>{p.label}</span>
-                          </div>
-                          <div
-                            className={`w-7 h-4 rounded-full transition-colors relative ${
-                              isChecked ? 'bg-emerald-500' : 'bg-[#222736]'
-                            }`}
-                          >
-                            <div
-                              className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform ${
-                                isChecked ? 'right-0.5' : 'left-0.5'
-                              }`}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => setIsPublishModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold shadow-md transition-all"
-            >
-              <Send className="w-3.5 h-3.5 fill-current" />
-              <span>Format & Publish ({selectedCount})</span>
-            </button>
-          </div>
         </div>
 
-        {/* Unified Control Bar: Platform Selector & Format Mode in Matching Segmented Toggle Style */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-1.5 rounded-2xl bg-[#090a10] border border-[#1e2230]">
-          {/* Select Which Platform Format Needed */}
-          <div className="flex flex-wrap items-center gap-1 p-0.5 rounded-xl bg-[#0d0e14] border border-[#1d202e]">
-            <span className="text-[11px] font-mono text-[#6e7587] px-2.5">Platform:</span>
-            {platformList.map((p) => {
-              const isActive = currentPlatform === p.id;
-              const isChecked = selectedPlatforms[p.id];
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => creatorFlowOperations.setCurrentPlatform(p.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-white text-black font-semibold shadow-sm'
-                      : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
-                  }`}
-                >
-                  {p.icon}
-                  <span>{p.label}</span>
-                  {isChecked && (
-                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-600' : 'bg-emerald-400'}`} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Format Mode (Matching Segmented Toggle Style) */}
-          <div className="flex flex-wrap items-center gap-1 p-0.5 rounded-xl bg-[#0d0e14] border border-[#1d202e]">
-            <span className="text-[11px] font-mono text-[#6e7587] px-2.5">Format Mode:</span>
-
-            {/* Video + Text Option */}
-            <button
-              onClick={() => setMediaMode('video_text')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                currentMode === 'video_text'
-                  ? 'bg-white text-black font-semibold shadow-sm'
-                  : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
-              }`}
-              title="Publish Video with text caption and headline"
-            >
-              <Video className="w-3.5 h-3.5" />
-              <span>Video + Text</span>
-            </button>
-
-            {/* Video Only Option (Reels / Shorts) */}
-            {(currentPlatform === 'instagram' || currentPlatform === 'youtube') && (
+        {/* Platform Tabs (YouTube / Instagram / LinkedIn / X / Medium) */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0c0d12] border border-[#1a1d28] overflow-x-auto">
+          {platformList.map((p) => {
+            const isActive = currentPlatform === p.id;
+            return (
               <button
-                onClick={() => setMediaMode('video_only')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  currentMode === 'video_only'
-                    ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
+                key={p.id}
+                type="button"
+                onClick={() => creatorFlowOperations.setCurrentPlatform(p.id)}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-[#181d2a] border border-[#2c354c] text-white shadow-xs'
+                    : 'text-[#71788a] hover:text-[#c4cad8] hover:bg-[#11131c]'
                 }`}
-                title="Publish Reel / Short video only"
               >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Reel Only</span>
+                {p.icon}
+                <span>{p.label}</span>
               </button>
-            )}
-
-            {/* Text Only Option (X / LinkedIn) */}
-            {(currentPlatform === 'x' || currentPlatform === 'linkedin') && (
-              <button
-                onClick={() => setMediaMode('text_only')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  currentMode === 'text_only'
-                    ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
-                }`}
-                title="Publish text / thread breakdown without video"
-              >
-                <AlignLeft className="w-3.5 h-3.5" />
-                <span>Text Only</span>
-              </button>
-            )}
-
-            {/* Article Option (Medium / LinkedIn) */}
-            {(currentPlatform === 'medium' || currentPlatform === 'linkedin' || currentPlatform === 'x') && (
-              <button
-                onClick={() => setMediaMode('article')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  currentMode === 'article'
-                    ? 'bg-white text-black font-semibold shadow-sm'
-                    : 'text-[#82889a] hover:text-white hover:bg-[#151722]'
-                }`}
-                title="Publish as full long-form article or deep thread"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Article / Thread</span>
-              </button>
-            )}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Main Grid: Left Dynamic Preview | Right Content Correction & Platform Metadata */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column (5 cols): Dynamic Preview (Video or Text Feed Preview) */}
-          <div className="lg:col-span-5 space-y-4">
-            {/* Case 1: Video + Text OR Video Only Mode */}
-            {(currentMode === 'video_text' || currentMode === 'video_only') ? (
-              <div className="p-4 rounded-2xl bg-[#090a10] border border-[#202434] space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Film className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                      {currentMode === 'video_only' ? 'Reel Video Clip' : 'Edited Video Cut'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-mono">
-                    <span className="px-2 py-0.5 rounded bg-[#151722] text-[#8c92a4] border border-[#25293a]">
-                      {aspectRatio}
-                    </span>
-                    <span className="text-emerald-400">
-                      {trimDuration}s
-                    </span>
-                  </div>
-                </div>
-
-                {/* Video Player Canvas (Framed to Workspace Aspect Ratio) */}
-                <div className="relative rounded-xl bg-black border border-[#1f2230] overflow-hidden aspect-video flex items-center justify-center">
-                  {isLocalVideo && localVideoUrl ? (
-                    <video
-                      ref={videoRef}
-                      src={localVideoUrl}
-                      onTimeUpdate={handleVideoTimeUpdate}
-                      className="w-full h-full object-contain"
-                      playsInline
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-4 text-center space-y-2">
-                      <div className="w-14 h-14 rounded-full bg-[#181a24] border border-[#2c3144] flex items-center justify-center font-mono text-xs text-white">
-                        HOST
-                      </div>
-                      <span className="text-xs text-[#a0a7ba] font-mono">
-                        {project.title}
-                      </span>
-                      <span className="text-[11px] font-mono text-emerald-400">
-                        Cut: {formatTime(trimStart)} → {formatTime(trimEnd)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Subtitle preview if enabled */}
-                  {captions.enabled && (
-                    <div className="absolute inset-x-3 bottom-3 z-10 text-center pointer-events-none">
-                      <span className="inline-block px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-white text-xs font-semibold border border-white/10">
-                        {captions.currentText}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Play/Pause Overlay Button */}
-                  <button
-                    onClick={toggleVideoPlayback}
-                    className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 transition-all opacity-80 hover:opacity-100 z-20"
-                    title={isPlaying ? 'Pause' : 'Play Cut'}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-5 h-5 fill-current" />
-                    ) : (
-                      <Play className="w-5 h-5 fill-current ml-0.5" />
-                    )}
-                  </button>
-                </div>
-
-                {/* YouTube Thumbnail Preview Card */}
-                {currentPlatform === 'youtube' && (
-                  <div className="p-3 rounded-xl bg-[#0f1118] border border-[#1b1e2a] space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#8c92a2] flex items-center gap-1.5 font-medium">
-                        <ImageIcon className="w-3.5 h-3.5 text-red-400" />
-                        <span>YouTube Thumbnail Preview</span>
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400">1280 x 720</span>
-                    </div>
-
-                    <div className="relative rounded-lg bg-[#141622] border border-[#252a3b] p-4 flex flex-col justify-between aspect-video overflow-hidden">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">
-                          HD
-                        </span>
-                        <span className="text-[10px] font-mono bg-black/70 text-white px-1.5 py-0.5 rounded">
-                          {formatTime(trimDuration)}
-                        </span>
-                      </div>
-                      <div className="text-sm font-bold text-white tracking-tight leading-tight line-clamp-2">
-                        {currentData.title}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Case 2: Text Only / Article Feed Card Preview */
-              <div className="p-4 rounded-2xl bg-[#090a10] border border-[#202434] space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AlignLeft className="w-4 h-4 text-sky-400" />
-                    <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                      {currentMode === 'article' ? 'Article / Thread Preview' : 'Text Post Feed Preview'}
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-emerald-400">
-                    No video attached
+        {/* Main Grid: Preview Card + Fields */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Left: One Preview Card (Aspect Ratio + Duration) */}
+          <div className="lg:col-span-5 space-y-3">
+            <div className="p-4 rounded-xl bg-[#0b0c11] border border-[#1a1d28] space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono text-[#71788a] uppercase tracking-wider text-[10px]">
+                  Cut Preview
+                </span>
+                <div className="flex items-center gap-2 font-mono text-[11px]">
+                  <span className="px-2 py-0.5 rounded bg-[#141722] text-[#8e96aa] border border-[#222738]">
+                    {aspectRatio}
+                  </span>
+                  <span className="text-emerald-400">
+                    {trimDuration}s
                   </span>
                 </div>
-
-                <div className="p-4 rounded-xl bg-[#0e1017] border border-[#1e2230] space-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center text-xs">
-                      CF
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-white block">CreatorFlow Studio</span>
-                      <span className="text-[10px] text-[#6e7587] font-mono">@creatorflow • Just now</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-[#d3d8e5] leading-relaxed whitespace-pre-line">
-                    {currentData.caption}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {currentData.hashtags.map((tag, idx) => (
-                      <span key={idx} className="text-xs font-mono text-sky-400">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-[#717789] text-center">
-                  Published as high-signal text breakdown without forcing video upload.
-                </p>
               </div>
-            )}
-          </div>
 
-          {/* Right Column (7 cols): Content Correction & Export Form */}
-          <div className="lg:col-span-7 space-y-4">
-            {/* Active Platform Release Inclusion Toggle */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#090a10] border border-[#1e2230]">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-white">
-                  Publish to {platformList.find((p) => p.id === currentPlatform)?.label}:
-                </span>
-                <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                    selectedPlatforms[currentPlatform]
-                      ? 'text-emerald-400 bg-emerald-950/70 border border-emerald-800/60'
-                      : 'text-[#6e7587] bg-[#141620]'
-                  }`}
-                >
-                  {selectedPlatforms[currentPlatform] ? '✓ Active in Release' : 'Paused / Excluded'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => togglePlatformSelection(currentPlatform)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  selectedPlatforms[currentPlatform] ? 'bg-emerald-500' : 'bg-[#222736]'
-                }`}
+              {/* Video / Visual Box */}
+              <div 
+                onClick={toggleVideoPlayback}
+                className="relative rounded-lg overflow-hidden bg-black border border-[#1d202e] flex items-center justify-center aspect-video cursor-pointer group"
               >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    selectedPlatforms[currentPlatform] ? 'translate-x-4' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
+                {isLocalVideo && localVideoUrl ? (
+                  <video
+                    ref={videoRef}
+                    src={localVideoUrl}
+                    playsInline
+                    muted
+                    loop
+                    className="w-full h-full object-contain pointer-events-none"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#0d0e14] text-[#6b7182] p-4 text-center space-y-2">
+                    <Film className="w-8 h-8 text-[#42485a]" />
+                    <span className="text-xs font-medium text-[#8e95aa]">{project.title}</span>
+                  </div>
+                )}
 
-            {/* AI Content Correction Banner & Action */}
-            <div className="p-4 rounded-2xl bg-[#090b12] border border-[#20273c] space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Wand2 className="w-4 h-4 text-[#38bdf8]" />
-                    <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                      AI Content Correction & Polish
+                {/* Subtitle / Caption Overlay */}
+                {captions.enabled && (
+                  <div className="absolute bottom-3 left-3 right-3 text-center pointer-events-none">
+                    <span className="inline-block px-2.5 py-1 rounded bg-black/80 text-white text-[11px] font-medium tracking-tight">
+                      {captions.currentText || currentData.title}
                     </span>
                   </div>
-                  <p className="text-xs text-[#8c92a4]">
-                    Optimizes grammar, hook retention, and platform formatting for {platformList.find(p => p.id === currentPlatform)?.label}.
-                  </p>
-                </div>
+                )}
 
-                <button
-                  onClick={handleRunContentCorrection}
-                  disabled={isCorrecting}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#182032] hover:bg-[#202c46] border border-[#2b395a] text-xs font-medium text-sky-300 hover:text-white transition-all shrink-0 shadow-sm"
-                >
-                  {isCorrecting ? (
-                    <span className="w-3.5 h-3.5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                  )}
-                  <span>{isCorrecting ? 'Correcting...' : 'Run Content Correction'}</span>
-                </button>
+                {/* Play / Pause indicator overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-9 h-9 rounded-full bg-white/90 text-black flex items-center justify-center shadow-lg">
+                    {isPlaying ? <Pause className="w-4 h-4 fill-black" /> : <Play className="w-4 h-4 fill-black ml-0.5" />}
+                  </div>
+                </div>
               </div>
 
-              {correctionApplied && (
-                <div className="p-2 rounded-lg bg-emerald-950/70 border border-emerald-800/60 text-xs text-emerald-300 flex items-center gap-2 animate-fade-in">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Content corrected! Headline, copy, and hashtags calibrated for {platformList.find(p => p.id === currentPlatform)?.label}.</span>
-                </div>
-              )}
-            </div>
-
-            {/* DIRECT 1-CLICK PLATFORM PUBLISH ACTION */}
-            <div className="p-4 rounded-2xl bg-[#0e111a] border border-[#22283c] space-y-2.5 shadow-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Direct Platform Action
-                </span>
-                <span className="text-[11px] font-mono text-[#787f92]">
-                  1-Click Direct Share
-                </span>
+              {/* Metadata strip */}
+              <div className="flex items-center justify-between text-[11px] text-[#71788a] font-mono pt-1">
+                <span>Cut: {formatTime(trimStart)} → {formatTime(trimEnd)}</span>
+                <span>Captions: {captions.enabled ? 'On' : 'Off'}</span>
               </div>
-
-              {currentPlatform === 'x' && (
-                <div className="space-y-2">
-                  <a
-                    href={getTwitterShareUrl(currentData.caption || currentData.title)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-semibold text-xs shadow-md transition-all"
-                  >
-                    <XIcon className="w-4 h-4 fill-black" />
-                    <span>Post Directly to X (Opens Compose Window)</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-neutral-600" />
-                  </a>
-                  <p className="text-[11px] text-[#717789] text-center">
-                    Pre-fills your viral Harness Engineering thread directly into X composer.
-                  </p>
-                </div>
-              )}
-
-              {currentPlatform === 'linkedin' && (
-                <div className="space-y-2">
-                  <a
-                    href={getLinkedInShareUrl('https://creatorflow.app', currentData.caption)}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => copyToClipboard(currentData.caption, 'linkedin_share')}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#0a66c2] hover:bg-[#084e96] text-white font-semibold text-xs shadow-md transition-all"
-                  >
-                    <LinkedinIcon className="w-4 h-4 fill-white" />
-                    <span>Share Directly to LinkedIn & Copy Text</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-white/80" />
-                  </a>
-                  <p className="text-[11px] text-[#717789] text-center">
-                    Copies technical case study to clipboard and opens LinkedIn post creator.
-                  </p>
-                </div>
-              )}
-
-              {currentPlatform === 'medium' && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(currentData.description);
-                      copyToClipboard(currentData.description, 'medium_article');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1d2232] hover:bg-[#272e42] border border-[#343e5a] text-white font-semibold text-xs shadow-md transition-all"
-                  >
-                    <BookOpen className="w-4 h-4 text-emerald-400" />
-                    <span>{copiedKey === 'medium_article' ? 'Copied Full Markdown Article!' : 'Copy Full Medium Article (Markdown)'}</span>
-                  </button>
-                  <p className="text-[11px] text-[#717789] text-center">
-                    Ready for 1-click import into Medium editor with architecture diagrams & code blocks.
-                  </p>
-                </div>
-              )}
-
-              {(currentPlatform === 'instagram' || currentPlatform === 'youtube') && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      const pack = `[${currentData.title}]\n\n${currentData.caption}\n\n${currentData.hashtags.join(' ')}`;
-                      navigator.clipboard.writeText(pack);
-                      copyToClipboard(pack, 'video_pack');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-semibold text-xs shadow-md transition-all"
-                  >
-                    <Film className="w-4 h-4 fill-black" />
-                    <span>{copiedKey === 'video_pack' ? 'Copied Video Cut & Metadata!' : 'Copy 9:16 Video Package & Captions'}</span>
-                  </button>
-                  <p className="text-[11px] text-[#717789] text-center">
-                    Calibrated for mobile reels/shorts algorithmic retention.
-                  </p>
-                </div>
-              )}
             </div>
+          </div>
 
-            {/* Title Field (Hidden for video_only reels if not needed) */}
-            {currentMode !== 'video_only' && (
+          {/* Right: Title, Caption & Copy Button */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="p-5 rounded-xl bg-[#0b0c11] border border-[#1a1d28] space-y-4">
+              {/* Title Field */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium uppercase tracking-wider text-[#82899b]">
-                    {currentPlatform === 'youtube' ? 'Headline / Video Title' : 'Post Title'}
+                  <label className="text-xs font-medium uppercase tracking-wider text-[#7e8598]">
+                    Title
                   </label>
                   <button
+                    type="button"
                     onClick={() => copyToClipboard(currentData.title, 'title')}
-                    className="flex items-center gap-1 text-xs text-[#8e95a7] hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-[11px] text-[#71788a] hover:text-white transition-colors"
                   >
                     {copiedKey === 'title' ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3 h-3 text-emerald-400" />
                         <span className="text-emerald-400">Copied</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3 h-3" />
                         <span>Copy Title</span>
                       </>
                     )}
@@ -747,175 +241,71 @@ export const PublishWorkspace: React.FC = () => {
                   type="text"
                   value={currentData.title}
                   onChange={(e) => handleFieldChange('title', e.target.value)}
-                  className="w-full rounded-xl bg-[#0d0e14] border border-[#202330] px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#414a64]"
+                  className="w-full rounded-lg bg-[#0e1017] border border-[#1f2332] px-3.5 py-2 text-xs text-white placeholder-[#505668] focus:outline-none focus:border-sky-500 font-medium"
                 />
               </div>
-            )}
 
-            {/* Caption / Content Explanation Field */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium uppercase tracking-wider text-[#82899b]">
-                  {currentMode === 'article' ? 'Article Body / Story Content' : 'Caption / Content Explanation'}
-                </label>
-                <button
-                  onClick={() => copyToClipboard(currentData.caption, 'caption')}
-                  className="flex items-center gap-1 text-xs text-[#8e95a7] hover:text-white transition-colors"
-                >
-                  {copiedKey === 'caption' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Caption</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <textarea
-                rows={currentMode === 'article' ? 8 : 5}
-                value={currentData.caption}
-                onChange={(e) => handleFieldChange('caption', e.target.value)}
-                className="w-full resize-y rounded-xl bg-[#0d0e14] border border-[#202330] px-4 py-3 text-xs text-white leading-relaxed focus:outline-none focus:border-[#414a64]"
-              />
-            </div>
-
-            {/* Hashtags Field */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium uppercase tracking-wider text-[#82899b]">
-                  Hashtags & Distribution Tags
-                </label>
-                <button
-                  onClick={() => copyToClipboard(currentData.hashtags.join(' '), 'tags')}
-                  className="flex items-center gap-1 text-xs text-[#8e95a7] hover:text-white transition-colors"
-                >
-                  {copiedKey === 'tags' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Tags</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-[#0d0e14] border border-[#202330]">
-                {currentData.hashtags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="text-xs font-mono px-2 py-0.5 rounded-md bg-[#161824] text-sky-300 border border-[#23283a]"
+              {/* Caption Field */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium uppercase tracking-wider text-[#7e8598]">
+                    Caption
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(currentData.caption, 'caption')}
+                    className="flex items-center gap-1 text-[11px] text-[#71788a] hover:text-white transition-colors"
                   >
-                    {tag}
-                  </span>
-                ))}
+                    {copiedKey === 'caption' ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Caption</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  rows={8}
+                  value={currentData.caption}
+                  onChange={(e) => handleFieldChange('caption', e.target.value)}
+                  className="w-full resize-none rounded-lg bg-[#0e1017] border border-[#1f2332] p-3.5 text-xs text-white placeholder-[#505668] focus:outline-none focus:border-sky-500 leading-relaxed font-sans"
+                />
               </div>
-            </div>
 
-            {/* Bottom Format & Publish Action Button */}
-            <div className="pt-3 border-t border-[#1c1f2b] flex items-center justify-between">
-              <span className="text-xs font-mono text-[#6e7587]">
-                Mode: {currentMode === 'video_only' ? 'Video Only' : currentMode === 'text_only' ? 'Text Only' : currentMode === 'article' ? 'Article' : 'Video + Text'} • {selectedPlatforms[currentPlatform] ? 'Active for export' : 'Unchecked (skipped)'}
-              </span>
-
-              <button
-                onClick={() => setIsPublishModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-semibold shadow-lg transition-all"
-              >
-                <Send className="w-3.5 h-3.5 fill-current" />
-                <span>Format & Publish ({selectedCount} Selected)</span>
-              </button>
+              {/* Primary Copy Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullCopy = currentData.title 
+                      ? `${currentData.title}\n\n${currentData.caption}`
+                      : currentData.caption;
+                    copyToClipboard(fullCopy, 'all');
+                  }}
+                  className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                >
+                  {copiedKey === 'all' ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Copy All ({platformList.find(p => p.id === currentPlatform)?.label})</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Format & Publish Multi-Platform Confirmation Modal */}
-      {isPublishModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-          <div className="w-full max-w-lg rounded-2xl bg-[#0c0e15] border border-[#222738] p-6 space-y-4 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-2 text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-              <h3 className="text-base font-semibold text-white tracking-tight">
-                Publish Package Ready!
-              </h3>
-            </div>
-
-            <p className="text-xs text-[#9ea4b6] leading-relaxed">
-              Your customized video cut and AI-polished copy have been calibrated for <strong>{selectedCount} selected channels</strong>.
-            </p>
-
-            {/* Selected Platforms Checklist with specific mode */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono text-[#787f90] uppercase tracking-wider block">
-                Channel Distribution Plan:
-              </span>
-              <div className="space-y-1.5">
-                {platformList
-                  .filter((p) => selectedPlatforms[p.id])
-                  .map((p) => {
-                    const mode = platformMediaModes[p.id];
-                    return (
-                      <div
-                        key={p.id}
-                        className="p-2.5 rounded-xl bg-[#11131c] border border-[#1f2332] flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          {p.icon}
-                          <span className="font-semibold text-white">{p.label}</span>
-                        </div>
-                        <span className="text-xs font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-900/50">
-                          {mode === 'video_only' ? 'Reel Video Only' : mode === 'text_only' ? 'Text Post' : mode === 'article' ? 'Article Story' : 'Video + Copy'}
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="space-y-2 pt-2">
-              <button
-                onClick={() => {
-                  const activePlatformNames = platformList
-                    .filter((p) => selectedPlatforms[p.id])
-                    .map((p) => p.label)
-                    .join(', ');
-                  const fullBundle = `=== CREATORFLOW MULTI-PLATFORM PUBLISH BUNDLE ===\nChannels: ${activePlatformNames}\nVideo Cut: ${formatTime(trimStart)} - ${formatTime(trimEnd)} (${trimDuration}s, ${aspectRatio})\n\n[TITLE]\n${currentData.title}\n\n[COPY]\n${currentData.caption}\n\n[HASHTAGS]\n${currentData.hashtags.join(' ')}`;
-                  navigator.clipboard.writeText(fullBundle);
-                  copyToClipboard(fullBundle, 'bundle');
-                }}
-                className="w-full py-2.5 px-3 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-md"
-              >
-                {copiedKey === 'bundle' ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-500" />
-                    <span>Copied Full Publishing Package!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    <span>Copy Full Multi-Channel Package</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => setIsPublishModalOpen(false)}
-                className="w-full py-2 px-3 rounded-xl bg-[#151722] hover:bg-[#1d202e] text-[#9ca3b6] text-xs font-medium border border-[#232736] transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

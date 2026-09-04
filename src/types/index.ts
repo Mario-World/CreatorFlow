@@ -2,7 +2,7 @@ export type AspectRatio = '16:9' | '9:16' | '1:1';
 
 export type PlatformId = 'youtube' | 'instagram' | 'linkedin' | 'x' | 'medium';
 
-export type WorkspaceArea = 'overview' | 'workspace' | 'publish' | 'research';
+export type WorkspaceArea = 'overview' | 'content' | 'workspace' | 'publish';
 
 export interface ResearchBrief {
   id: string;
@@ -28,6 +28,7 @@ export interface Project {
   source?: 'sample' | 'local';
   videoUrl?: string | null;
   researchBrief?: ResearchBrief | null;
+  scriptText?: string;
 }
 
 export interface TranscriptSegment {

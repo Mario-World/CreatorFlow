@@ -178,11 +178,11 @@ export const VideoPreview: React.FC = () => {
 
           <button
             onClick={() => creatorFlowOperations.undoAIAction()}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all shrink-0 shadow-md"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black font-semibold text-xs transition-all shrink-0 shadow-md cursor-pointer"
             title="Revert AI changes via WebMCP undo"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Undo</span>
+            <span>Undo AI changes</span>
           </button>
         </div>
       )}

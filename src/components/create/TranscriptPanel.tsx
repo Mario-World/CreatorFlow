@@ -5,7 +5,11 @@ import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { FileText, Play, Scissors, Clock } from 'lucide-react';
 
-export const TranscriptPanel: React.FC = () => {
+interface TranscriptPanelProps {
+  className?: string;
+}
+
+export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ className }) => {
   const transcript = useCreatorFlowStore((s) => s.transcript);
   const selectedSegmentId = useCreatorFlowStore((s) => s.selectedSegment);
   const currentTime = useCreatorFlowStore((s) => s.timeline.currentTime);
@@ -28,7 +32,7 @@ export const TranscriptPanel: React.FC = () => {
   };
 
   return (
-    <aside className="hidden xl:flex w-72 2xl:w-80 border-r border-[#1c1f2b] bg-black flex-col h-full shrink-0 select-none">
+    <div className={`border border-[#1c1f2b] bg-[#090a0f] rounded-lg flex flex-col select-none overflow-hidden ${className || 'w-full'}`}>
       {/* Header */}
       <div className="p-4 border-b border-[#1c1f2b] flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -136,7 +140,7 @@ export const TranscriptPanel: React.FC = () => {
           );
         })}
       </div>
-    </aside>
+    </div>
   );
 };
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { creatorFlowOperations } from '@/domain/operations';
 import { WebMCPActivityPanel } from '@/components/webmcp/WebMCPActivityPanel';
-import { initWebMCP } from '@/lib/webmcp';
+import { initWebMCP, executeWebMCPTool } from '@/lib/webmcp';
 import { generateChatGptCompletion, ChatMessage } from '@/lib/openai';
 import { 
   Bot, 
@@ -20,7 +20,8 @@ import {
   Flame,
   FileSearch,
   Share2,
-  Film
+  Film,
+  RotateCcw
 } from 'lucide-react';
 
 export const DirectorPanel: React.FC = () => {
@@ -44,13 +45,13 @@ export const DirectorPanel: React.FC = () => {
       role: 'assistant',
       content: `Hello! I am Director, connected live with **ChatGPT (${chatGPTAuth.model})**.
 
-I am ready to help you:
-• Deep-dive research into **Harness Engineering**
-• Trim & frame local video for **Shorts / Reels (9:16)**
-• Compose viral **X (Twitter) posts & threads** with direct 1-click sharing
-• Draft technical **LinkedIn case studies** & **Medium articles**
+I am ready to help you process your original **2:07 vertical video** on **"How to Fine-tune a Model Without Code"**:
+• Find the strongest 30 seconds (00:18 → 00:48) and prepare it as a short
+• Prepare tailored post copy for **LinkedIn**
+• Save the core idea as a **Research Brief**
+• Full reversible **Undo/Redo** via WebMCP
 
-What would you like to build?`,
+What outcome should we execute?`,
       timestamp: 'Just now',
       toolsUsed: ['openai.gpt-4o', 'webmcp.ready'],
     },
@@ -67,11 +68,10 @@ What would you like to build?`,
   if (!directorOpen) return null;
 
   const quickPrompts = [
-    { label: 'Research Harness Engineering', icon: <Flame className="w-3 h-3 text-amber-400" /> },
-    { label: 'Find strongest 30s vertical reel', icon: <Film className="w-3 h-3 text-emerald-400" /> },
-    { label: 'Draft X Thread on Harness Engineering', icon: <Share2 className="w-3 h-3 text-sky-400" /> },
-    { label: 'Write LinkedIn Technical Post', icon: <Share2 className="w-3 h-3 text-blue-400" /> },
-    { label: 'Prepare Full Medium Article', icon: <FileSearch className="w-3 h-3 text-purple-400" /> },
+    { label: 'Find the strongest 30 seconds from this video and prepare it as a short.', icon: <Film className="w-3 h-3 text-emerald-400" /> },
+    { label: 'Prepare this for LinkedIn.', icon: <Share2 className="w-3 h-3 text-sky-400" /> },
+    { label: 'Save the key idea from this content as a research brief.', icon: <FileSearch className="w-3 h-3 text-purple-400" /> },
+    { label: 'Undo that.', icon: <RotateCcw className="w-3 h-3 text-amber-400" /> },
   ];
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -90,22 +90,36 @@ What would you like to build?`,
     setIsRunning(true);
 
     try {
-      // 1. Run domain operation or topic loader if matching
+      // 1. Run domain operation or WebMCP tool if matching
       const lower = text.toLowerCase();
-      if (lower.includes('harness') || lower.includes('topic')) {
-        loadHarnessEngineeringPack();
-      }
-
       if (
-        (lower.includes('strongest') && (lower.includes('vertical') || lower.includes('short') || lower.includes('reel'))) ||
-        lower.includes('30s') ||
-        lower.includes('vertical short')
+        (lower.includes('strongest') || lower.includes('30s') || lower.includes('30 seconds') || lower.includes('short')) &&
+        !lower.includes('linkedin')
       ) {
         await creatorFlowOperations.proposeStrongestShort();
       } else if (lower.includes('linkedin')) {
-        await creatorFlowOperations.runDirectorIntent('Turn this into a LinkedIn post');
+        await executeWebMCPTool('prepare_for_platform', { platform: 'linkedin' });
+        useCreatorFlowStore.getState().setCurrentPlatform('linkedin');
+      } else if (lower.includes('undo')) {
+        await creatorFlowOperations.undoAIAction();
+      } else if (lower.includes('research') || lower.includes('brief') || lower.includes('save') || lower.includes('key idea')) {
+        await executeWebMCPTool('save_research_brief', {
+          topic: 'How to Fine-tune a Model Without Code',
+          audience: 'Non-technical founders, operators, product managers & creators',
+          coreThesis: 'Fine-tuning custom AI models today requires zero code: curated domain datasets create defensible moats without writing Python or managing GPU clusters.',
+          hooks: [
+            '“You do not need a machine learning degree to fine-tune high-performance models.”',
+            '“Proprietary data is your moat—no-code training tools handle the rest.”',
+          ],
+          keyBeats: [
+            '00:00 - The Misconception: AI fine-tuning requires deep ML code',
+            '00:18 - The Reality: Zero-code fine-tuning is accessible today',
+            '00:48 - The Workflow: Curating datasets and automating training',
+          ],
+        });
       } else if (lower.includes('x') || lower.includes('twitter') || lower.includes('thread')) {
-        await creatorFlowOperations.runDirectorIntent('Prepare this for X');
+        await executeWebMCPTool('prepare_for_platform', { platform: 'x' });
+        useCreatorFlowStore.getState().setCurrentPlatform('x');
       }
 
       // 2. Query ChatGPT live completion
@@ -114,7 +128,7 @@ What would you like to build?`,
         conversationHistory: messages,
         apiKey: chatGPTAuth.apiKey,
         model: chatGPTAuth.model,
-        topic: 'Harness Engineering',
+        topic: 'How to Fine-tune a Model Without Code',
       });
 
       const assistantMsg: ChatMessage = {
@@ -140,7 +154,7 @@ What would you like to build?`,
     } else if (actionType === 'publish') {
       setCurrentArea('publish');
     } else if (actionType === 'research') {
-      setCurrentArea('research');
+      setCurrentArea('workspace');
     }
   };
 
@@ -227,35 +241,42 @@ What would you like to build?`,
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <div className="text-sm font-bold text-white font-mono">
-                  {proposedEdit.startFormatted} → {proposedEdit.endFormatted}
+              <div className="space-y-2 text-xs">
+                <div>
+                  <div className="text-[10px] uppercase font-mono text-[#828a9e]">Source</div>
+                  <div className="text-sm font-bold text-white font-mono mt-0.5">
+                    {proposedEdit.startFormatted} — {proposedEdit.endFormatted}
+                  </div>
                 </div>
-                <p className="text-xs text-[#cad0e0] font-medium leading-snug">
-                  &ldquo;{proposedEdit.title}&rdquo;
-                </p>
-                <div className="flex items-center gap-2 text-[11px] font-mono text-[#8e95aa] pt-0.5">
-                  <span>Ratio: <strong className="text-white">{proposedEdit.aspectRatio}</strong></span>
-                  <span>•</span>
-                  <span>Captions: <strong className="text-white">{proposedEdit.captions ? 'On' : 'Off'}</strong></span>
+                <div>
+                  <div className="text-[10px] uppercase font-mono text-[#828a9e]">Format</div>
+                  <div className="font-semibold text-white mt-0.5">
+                    {proposedEdit.aspectRatio} Vertical
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-mono text-[#828a9e]">Captions</div>
+                  <div className="text-emerald-400 font-medium mt-0.5">
+                    {proposedEdit.captions ? 'Recommended' : 'Off'}
+                  </div>
                 </div>
               </div>
 
               {/* Approve / Reject Actions */}
-              <div className="grid grid-cols-2 gap-2 pt-0.5">
-                <button
-                  onClick={() => creatorFlowOperations.approveProposedEdit()}
-                  className="w-full py-1.5 px-3 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Approve</span>
-                </button>
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#1a231f]">
                 <button
                   onClick={() => creatorFlowOperations.rejectProposedEdit()}
-                  className="w-full py-1.5 px-3 rounded-lg bg-[#141620] hover:bg-[#1f2230] text-[#a2a8ba] hover:text-white text-xs font-medium border border-[#242838] transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2 px-3 rounded-lg bg-[#141620] hover:bg-[#1f2230] text-[#a2a8ba] hover:text-white text-xs font-medium border border-[#242838] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Reject</span>
+                </button>
+                <button
+                  onClick={() => creatorFlowOperations.approveProposedEdit()}
+                  className="w-full py-2 px-3 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Approve Edit</span>
                 </button>
               </div>
             </div>
@@ -266,7 +287,7 @@ What would you like to build?`,
               {/* Quick Prompt Chips */}
               <div className="space-y-1.5">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-[#63687b] block">
-                  Quick Prompts (Harness Engineering)
+                  Quick Prompts (Demo Story)
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {quickPrompts.map((p, idx) => (

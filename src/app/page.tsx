@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react';
 import { useCreatorFlowStore } from '@/store/creatorFlowStore';
 import { TopNav } from '@/components/layout/TopNav';
+import { LandingPage } from '@/components/landing/LandingPage';
+import { ContentWorkspace } from '@/components/content/ContentWorkspace';
 import { CreateWorkspace } from '@/components/create/CreateWorkspace';
 import { PublishWorkspace } from '@/components/publish/PublishWorkspace';
-import { ResearchWorkspace } from '@/components/research/ResearchWorkspace';
-import { LandingPage } from '@/components/landing/LandingPage';
 import { initWebMCP } from '@/lib/webmcp';
 
 export default function Home() {
@@ -17,16 +17,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-black text-[#f3f4f6]">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#070709] text-[#f3f4f6]">
       {/* Persistent Top Navigation Bar across the entire application */}
       <TopNav />
 
-      {/* Main Workspace View Switcher: Navigates cleanly within navbar */}
+      {/* Main Area View Switcher */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
         {currentArea === 'overview' && <LandingPage />}
+        {currentArea === 'content' && <ContentWorkspace />}
         {currentArea === 'workspace' && <CreateWorkspace />}
         {currentArea === 'publish' && <PublishWorkspace />}
-        {currentArea === 'research' && <ResearchWorkspace />}
       </div>
     </div>
   );
