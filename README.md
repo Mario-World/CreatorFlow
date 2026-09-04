@@ -1,4 +1,4 @@
-# CreatorFlow — Agent-Native Content Workflow 
+# CreatorFlow — Agent-Native Content Workflow
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
@@ -41,20 +41,40 @@ Human Review
 Platform-ready Content
 ```
 
-## The Problem
+## The Problem We Are Solving
 
-Publishing one piece of content across the web often means repeating the same work:
+> **“Creators already have the content. The hard part is everything between recording and publishing. CreatorFlow turns that production workflow into an agent-operable workspace using WebMCP, while keeping the creator in the loop.”**
 
-- understand the source material
-- find the important section
-- cut the video
-- change the aspect ratio
-- add captions
-- restructure the content
-- adapt copy for another platform
-- prepare the final post
+Creators already have the **ideas, recordings, knowledge, opinions, and drafts**. The difficult part is everything that happens after the content exists:
 
-The creative decisions belong to the creator. The repetitive workflow should be easier.
+- finding the important moments
+- trimming and restructuring content
+- adapting video formats
+- adding captions
+- turning one source into different content formats
+- preparing posts for different platforms
+- repeating the same workflow across YouTube, Instagram, LinkedIn, X, and Medium
+
+Today, these tasks are usually handled through a collection of buttons, timelines, forms, dashboards, and separate creator tools. The creator has to manually navigate through each step even when the desired outcome is simple.
+
+The problem isn't that creators need another AI that **creates content for them**.
+
+The problem is that creators need help **operating the workflow around the content they already created**.
+
+CreatorFlow addresses this by making those real workflow capabilities available to agents through **WebMCP**.
+
+Instead of:
+
+**“Open the editor → find the timeline → scrub → crop → caption → export → rewrite → prepare another post.”**
+
+A creator can express an outcome:
+
+> **“Find the strongest part of this recording, make it a short, and prepare it for LinkedIn.”**
+
+The agent can then use CreatorFlow's WebMCP tools to understand the project, plan the edit, perform the repetitive operations, and prepare the output — while the creator remains responsible for reviewing and approving the result.
+
+**Human owns the content.  
+Agent reduces the work around it.**
 
 ## The Solution
 
@@ -313,7 +333,7 @@ Prepare content for different publishing destinations:
 
 Example:
 
-```
+```text
 One Source
     │
     ├── YouTube → video + title + description
